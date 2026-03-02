@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SeekerPad
+
+A modern, mobile-first Solana launchpad for Seeker & Saga users.
+
+## Features
+
+- 🎯 **Launch Discovery** - Browse and filter token launches
+- 👛 **Wallet Connection** - Phantom, Solflare support
+- 👤 **Profile Dashboard** - Track participations, NFTs, staking
+- 🎫 **NFT Access** - Seeker Pad NFTs for Elite features
+- 📱 **Mobile-First** - Optimized for mobile devices
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Install wallet packages
+npm install @solana/wallet-adapter-react @solana/wallet-adapter-react-ui @solana/wallet-adapter-wallets @solana/web3.js
+
+# Run development
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Next.js 16 (App Router)
+- Tailwind CSS v4
+- Solana Web3.js + Wallet Adapter
+- TypeScript
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+src/
+├── app/              # Pages
+│   ├── page.tsx     # Home
+│   ├── launchpad/   # Launch listing
+│   ├── launch/[id]/ # Launch detail
+│   ├── profile/     # User profile
+│   └── nft/         # NFT hub
+├── components/      # UI components
+├── contexts/        # Wallet provider
+├── data/           # Mock data
+├── hooks/          # Custom hooks
+├── lib/            # Utils
+└── types/          # TypeScript types
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Design
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Dark theme with purple/blue gradients
+- Mobile-first responsive design
+- Glass morphism effects
+- Smooth animations
