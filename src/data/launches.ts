@@ -1,138 +1,52 @@
 import { Launch, Participation, SeekerPadNFT, EligibilityStatus } from '@/types';
+import { launchesApi, participationApi, eligibilityApi, nftApi } from './api';
 
-// Mock data store
-// In production, these would be API calls
+// Use API by default, fallback to mock if not available
+const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true';
 
-export async function getLaunches(): Promise<Launch[]> {
-  await new Promise((resolve) => setTimeout(resolve, 100));
-  return mockLaunches;
-}
-
-export async function getLaunchById(id: string): Promise<Launch | undefined> {
-  await new Promise((resolve) => setTimeout(resolve, 50));
-  return mockLaunches.find((l) => l.id === id);
-}
-
-export async function getEliteLaunches(): Promise<Launch[]> {
-  await new Promise((resolve) => setTimeout(resolve, 100));
-  return mockLaunches.filter((l) => l.type === 'elite');
-}
-
-export async function getLiveLaunches(): Promise<Launch[]> {
-  await new Promise((resolve) => setTimeout(resolve, 100));
-  return mockLaunches.filter((l) => l.status === 'live');
-}
-
-export async function getUserParticipations(address: string): Promise<Participation[]> {
-  await new Promise((resolve) => setTimeout(resolve, 100));
-  return mockParticipations;
-}
-
-export async function checkEligibility(address: string): Promise<EligibilityStatus> {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  return {
-    isEligible: true,
-    hasNFT: false,
-    nftCount: 0,
-    categories: [
-      { category: 'saga-genesis', isEligible: false },
-      { category: 'seeker-pioneer', isEligible: true },
-      { category: 'jupiter-aligned', isEligible: false },
-      { category: 'bonk-community', isEligible: false },
-      { category: 'meteora-lp', isEligible: false },
-    ],
-  };
-}
-
-export async function getUserNFTs(address: string): Promise<SeekerPadNFT[]> {
-  await new Promise((resolve) => setTimeout(resolve, 100));
-  return mockNFTs;
-}
-
+// Mock data store (fallback)
 const mockLaunches: Launch[] = [
   {
     id: '1',
-    name: 'Solana Mobile dApp Store',
-    symbol: 'MDA',
-    description: 'The official dApp store for Solana Mobile devices. Discover and install native mobile dApps directly on your Seeker or Saga device.',
-    tokenomics: {
-      totalSupply: 1000000000,
-      initialLiquidity: 15,
-      liquidityPercent: 15,
-      marketingPercent: 5,
-      teamPercent: 10,
-      communityPercent: 70,
-      pricePerToken: 0.05,
-      raiseTarget: 5000000,
-    },
-    timeline: {
-      startTime: new Date('2025-04-01T12:00:00Z'),
-      endTime: new Date('2025-04-01T18:00:00Z'),
-      tgeDate: new Date('2025-04-15T12:00:00Z'),
-      vestingStart: new Date('2025-04-15T12:00:00Z'),
-      vestingDuration: 12,
-      vestingCliff: 3,
-    },
-    status: 'upcoming',
-    type: 'standard',
-    website: 'https://solana.com/mobile',
-    twitter: '@solanamobile',
-  },
-  {
-    id: '2',
     name: 'Bonkify',
     symbol: 'BKFY',
     description: 'Mobile-first meme coin trading platform built specifically for Seeker and Saga users.',
-    tokenomics: {
-      totalSupply: 5000000000,
-      initialLiquidity: 10,
-      liquidityPercent: 12,
-      marketingPercent: 8,
-      teamPercent: 5,
-      communityPercent: 75,
-      pricePerToken: 0.001,
-      raiseTarget: 2000000,
-    },
-    timeline: {
-      startTime: new Date('2025-03-25T14:00:00Z'),
-      endTime: new Date('2025-03-25T20:00:00Z'),
-      tgeDate: new Date('2025-04-05T12:00:00Z'),
-      vestingStart: new Date('2025-04-05T12:00:00Z'),
-      vestingDuration: 6,
-      vestingCliff: 1,
-    },
     status: 'live',
     type: 'elite',
-    website: 'https://bonkify.app',
-    twitter: '@bonkify',
+    launchPrice: 0.001,
+    hardCap: 2000000,
+    totalRaised: 1560000,
+    startTime: new Date('2025-03-25T14:00:00Z'),
+    endTime: new Date('2025-03-25T20:00:00Z'),
+    participants: 1250,
+  },
+  {
+    id: '2',
+    name: 'SolanaSaga Phone',
+    symbol: 'SAGA',
+    description: 'The next generation blockchain phone.',
+    status: 'upcoming',
+    type: 'standard',
+    launchPrice: 0.005,
+    hardCap: 5000000,
+    totalRaised: 0,
+    startTime: new Date('2025-04-01T14:00:00Z'),
+    endTime: new Date('2025-04-07T20:00:00Z'),
+    participants: 0,
   },
   {
     id: '3',
-    name: 'SeedVault Wallet',
-    symbol: 'SVW',
-    description: 'Hardware-grade mobile wallet with Seed Vault integration for Solana mobile devices.',
-    tokenomics: {
-      totalSupply: 500000000,
-      initialLiquidity: 20,
-      liquidityPercent: 20,
-      marketingPercent: 5,
-      teamPercent: 15,
-      communityPercent: 60,
-      pricePerToken: 0.10,
-      raiseTarget: 8000000,
-    },
-    timeline: {
-      startTime: new Date('2025-03-10T12:00:00Z'),
-      endTime: new Date('2025-03-10T18:00:00Z'),
-      tgeDate: new Date('2025-03-20T12:00:00Z'),
-      vestingStart: new Date('2025-03-20T12:00:00Z'),
-      vestingDuration: 9,
-      vestingCliff: 3,
-    },
+    name: 'SeekerX',
+    symbol: 'SKRX',
+    description: 'DeFi suite built for the Seeker ecosystem.',
     status: 'ended',
-    type: 'standard',
-    website: 'https://seedvault.io',
-    twitter: '@seedvault',
+    type: 'elite',
+    launchPrice: 0.01,
+    hardCap: 1000000,
+    totalRaised: 1000000,
+    startTime: new Date('2025-03-20T14:00:00Z'),
+    endTime: new Date('2025-03-22T20:00:00Z'),
+    participants: 3420,
   },
 ];
 
@@ -154,6 +68,223 @@ const mockNFTs: SeekerPadNFT[] = [
     id: 'nft1',
     category: 'seeker-pioneer',
     mintDate: new Date('2025-01-15'),
-    metadataUrl: 'https://arweave.net/example',
+    eliteAccess: true,
+    metadataUrl: '',
   },
 ];
+
+// API-based functions
+export async function getLaunches(): Promise<Launch[]> {
+  if (USE_API) {
+    try {
+      const launches = await launchesApi.getAll();
+      return launches.map(transformLaunchFromApi);
+    } catch (error) {
+      console.warn('Failed to fetch from API, using mock data:', error);
+    }
+  }
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  return mockLaunches;
+}
+
+export async function getLaunchById(id: string): Promise<Launch | undefined> {
+  if (USE_API) {
+    try {
+      const launch = await launchesApi.getById(id);
+      return transformLaunchFromApi(launch);
+    } catch (error) {
+      console.warn('Failed to fetch from API, using mock data:', error);
+    }
+  }
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  return mockLaunches.find((l) => l.id === id);
+}
+
+export async function getEliteLaunches(): Promise<Launch[]> {
+  const launches = await getLaunches();
+  return launches.filter((l) => l.type === 'elite');
+}
+
+export async function getLiveLaunches(): Promise<Launch[]> {
+  const launches = await getLaunches();
+  return launches.filter((l) => l.status === 'live');
+}
+
+export async function getUserParticipations(address: string): Promise<Participation[]> {
+  if (!address) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return mockParticipations;
+  }
+  
+  if (USE_API) {
+    try {
+      const participations = await participationApi.getUserParticipations(address);
+      return participations.map(transformParticipationFromApi);
+    } catch (error) {
+      console.warn('Failed to fetch participations from API:', error);
+    }
+  }
+  
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  return mockParticipations;
+}
+
+export async function getUserParticipation(address: string, launchId: string): Promise<Participation | null> {
+  if (!address) return null;
+  
+  if (USE_API) {
+    try {
+      const participation = await participationApi.getUserParticipation(address, launchId);
+      return participation ? transformParticipationFromApi(participation) : null;
+    } catch (error) {
+      console.warn('Failed to fetch participation from API:', error);
+    }
+  }
+  
+  return mockParticipations.find(p => p.launchId === launchId) || null;
+}
+
+export async function createParticipation(data: {
+  launchId: string;
+  userAddress: string;
+  amountSol: number;
+  txSignature: string;
+}): Promise<Participation> {
+  if (USE_API) {
+    try {
+      const participation = await participationApi.create({
+        launch_id: data.launchId,
+        user_address: data.userAddress,
+        amount_sol: data.amountSol,
+        tx_signature: data.txSignature,
+      });
+      return transformParticipationFromApi(participation);
+    } catch (error) {
+      console.error('Failed to create participation:', error);
+      throw error;
+    }
+  }
+  
+  // Mock response
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  return {
+    id: `p_${Date.now()}`,
+    launchId: data.launchId,
+    userAddress: data.userAddress,
+    amount: data.amountSol,
+    tokenAmount: data.amountSol * 1000,
+    status: 'pending',
+    claimableAmount: data.amountSol * 1000,
+    claimedAmount: 0,
+  };
+}
+
+export async function claimTokens(participationId: string, txSignature: string): Promise<Participation> {
+  if (USE_API) {
+    try {
+      const participation = await participationApi.claim(participationId, txSignature);
+      return transformParticipationFromApi(participation);
+    } catch (error) {
+      console.error('Failed to claim tokens:', error);
+      throw error;
+    }
+  }
+  
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  return {
+    id: participationId,
+    status: 'claimed',
+  };
+}
+
+// Eligibility
+export async function checkEligibility(address: string): Promise<EligibilityStatus> {
+  if (!address) {
+    return {
+      isEligible: false,
+      hasNFT: false,
+      nftCount: 0,
+      categories: [],
+    };
+  }
+  
+  if (USE_API) {
+    try {
+      const eligibility = await eligibilityApi.check(address);
+      return eligibility;
+    } catch (error) {
+      console.warn('Failed to check eligibility from API:', error);
+    }
+  }
+  
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  return {
+    isEligible: true,
+    hasNFT: true,
+    nftCount: 1,
+    categories: [
+      { category: 'seeker-pioneer', isEligible: true },
+      { category: 'jupiter-aligned', isEligible: false },
+    ],
+  };
+}
+
+// NFTs
+export async function getUserNFTs(address: string): Promise<SeekerPadNFT[]> {
+  if (!address) return [];
+  
+  if (USE_API) {
+    try {
+      const nfts = await nftApi.getUserNFTs(address);
+      return nfts.map(transformNFTFromApi);
+    } catch (error) {
+      console.warn('Failed to fetch NFTs from API:', error);
+    }
+  }
+  
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  return mockNFTs;
+}
+
+// Transform functions to match frontend types
+function transformLaunchFromApi(apiLaunch: any): Launch {
+  return {
+    id: apiLaunch.id,
+    name: apiLaunch.name,
+    symbol: apiLaunch.symbol,
+    description: apiLaunch.description,
+    status: apiLaunch.status,
+    type: apiLaunch.type,
+    launchPrice: parseFloat(apiLaunch.launch_price),
+    hardCap: parseInt(apiLaunch.raise_target),
+    totalRaised: parseInt(apiLaunch.total_raised) || 0,
+    startTime: new Date(apiLaunch.start_time),
+    endTime: new Date(apiLaunch.end_time),
+    participants: apiLaunch.participants_count || 0,
+  };
+}
+
+function transformParticipationFromApi(apiParticipation: any): Participation {
+  return {
+    id: apiParticipation.id,
+    launchId: apiParticipation.launch_id,
+    userAddress: apiParticipation.user_address,
+    amount: parseFloat(apiParticipation.amount_sol),
+    tokenAmount: parseInt(apiParticipation.tokens_received),
+    status: apiParticipation.status,
+    claimableAmount: parseInt(apiParticipation.claimable_amount) || 0,
+    claimedAmount: parseInt(apiParticipation.claimed_amount) || 0,
+  };
+}
+
+function transformNFTFromApi(apiNFT: any): SeekerPadNFT {
+  return {
+    id: apiNFT.id,
+    mintAddress: apiNFT.mint_address,
+    ownerAddress: apiNFT.owner_address,
+    category: apiNFT.category,
+    mintDate: new Date(apiNFT.mint_date),
+    eliteAccess: true,
+    metadataUrl: apiNFT.metadata_url,
+  };
+}

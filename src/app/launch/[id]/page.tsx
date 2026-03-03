@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useWallet } from '@/components/wallet/useWallet';
-import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import ParticipateButton from '@/components/ParticipateButton';
+import { createParticipation, getUserParticipation } from '@/data/launches';
 
 const launchData: Record<string, {
   name: string;
@@ -82,11 +81,19 @@ export default function LaunchDetail() {
   const [solAmount, setSolAmount] = useState('');
   const [isParticipating, setIsParticipating] = useState(false);
   const [participationSuccess, setParticipationSuccess] = useState(false);
+  const [userParticipation, setUserParticipation] = useState<any>(null);
   
-  const { wallet, connect, openWalletModal } = useWallet();
+  const { wallet, openWalletModal } = useWallet();
   const launch = launchData[id] || launchData['1'];
   
   const tokensReceived = solAmount ? (parseFloat(solAmount) / launch.tokenomics.pricePerToken).toLocaleString() : '0';
+
+  // Fetch user's existing participation
+  useEffect(() => {
+    if (wallet.connected && wallet.publicKey) {
+      getUserParticipation(wallet.publicKey, id).then(setUserParticipation).catch(console.error);
+    }
+  }, [wallet.connected, wallet.publicKey, id]);
 
   const handleParticipate = async () => {
     if (!wallet.connected) {
@@ -106,11 +113,24 @@ export default function LaunchDetail() {
 
     setIsParticipating(true);
 
-    // Simulate participation (in production, this would send a real transaction)
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // In production, this would send a real transaction
+      // For now, simulate and also try the API if available
+      const mockSignature = `mock_${Date.now()}`;
+      
+      await createParticipation({
+        launchId: id,
+        userAddress: wallet.publicKey!,
+        amountSol: parseFloat(solAmount),
+        txSignature: mockSignature,
+      });
+      
       setParticipationSuccess(true);
       setSolAmount('');
+      
+      // Refresh participation
+      const participation = await getUserParticipation(wallet.publicKey!, id);
+      setUserParticipation(participation);
     } catch (error) {
       console.error('Participation error:', error);
       alert('Failed to participate. Please try again.');
@@ -120,6 +140,7 @@ export default function LaunchDetail() {
   };
 
   const isLive = launch.status === 'live';
+  const hasParticipated = userParticipation && userParticipation.status !== 'claimed';
 
   return (
     <div className="min-h-screen pt-24 pb-16 page-enter">
@@ -191,6 +212,26 @@ export default function LaunchDetail() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* User's Participation */}
+            {hasParticipated && (
+              <div className="crystal-card rounded-2xl p-6 border-2 border-green-500/30">
+                <h2 className="text-xl font-bold text-white mb-4">✅ You Participated!</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="glass rounded-xl p-4">
+                    <div className="text-gray-400 text-sm mb-1">You Contributed</div>
+                    <div className="text-white font-bold text-xl">{userParticipation?.amount} SOL</div>
+                  </div>
+                  <div className="glass rounded-xl p-4">
+                    <div className="text-gray-400 text-sm mb-1">Tokens Received</div>
+                    <div className="gradient-text font-bold text-xl">{userParticipation?.tokenAmount?.toLocaleString() || '0'}</div>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 bg-blue-500/20 rounded-xl text-blue-400 text-sm">
+                  📋 Tokens will be claimable after TGE
+                </div>
               </div>
             )}
 
@@ -274,7 +315,7 @@ export default function LaunchDetail() {
           <div className="space-y-6">
             <div className="crystal-card rounded-2xl p-6 sticky top-24">
               <h2 className="text-xl font-bold text-white mb-4">
-                {launch.status === 'upcoming' ? 'Upcoming Sale' : 'Participate'}
+                {launch.status === 'upcoming' ? 'Upcoming Sale' : hasParticipated ? 'Already Participated' : 'Participate'}
               </h2>
               
               {/* Success Message */}
@@ -285,49 +326,56 @@ export default function LaunchDetail() {
                 </div>
               )}
               
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-gray-400 text-sm mb-2">Amount (SOL)</label>
-                  <input
-                    type="number"
-                    placeholder="0.00"
-                    value={solAmount}
-                    onChange={(e) => setSolAmount(e.target.value)}
-                    disabled={launch.status === 'upcoming' || !wallet.connected}
-                    className="w-full glass text-white px-4 py-4 rounded-xl focus:outline-none focus:border-purple-500/50 transition-colors placeholder-gray-500 disabled:opacity-50"
-                  />
-                  <p className="text-gray-400 text-sm mt-2">
-                    ≈ <span className="text-white font-medium">{tokensReceived}</span> {launch.symbol}
-                  </p>
+              {hasParticipated ? (
+                <div className="p-4 bg-purple-500/20 border border-purple-500/30 rounded-xl text-center">
+                  <div className="text-purple-400 font-medium">You have already participated</div>
+                  <div className="text-gray-400 text-sm mt-1">Check your portfolio for details</div>
                 </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-gray-400 text-sm mb-2">Amount (SOL)</label>
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      value={solAmount}
+                      onChange={(e) => setSolAmount(e.target.value)}
+                      disabled={launch.status === 'upcoming' || !wallet.connected}
+                      className="w-full glass text-white px-4 py-4 rounded-xl focus:outline-none focus:border-purple-500/50 transition-colors placeholder-gray-500 disabled:opacity-50"
+                    />
+                    <p className="text-gray-400 text-sm mt-2">
+                      ≈ <span className="text-white font-medium">{tokensReceived}</span> {launch.symbol}
+                    </p>
+                  </div>
 
-                <button 
-                  onClick={handleParticipate}
-                  disabled={isParticipating || launch.status === 'upcoming'}
-                  className="w-full btn-glossy py-4 rounded-xl font-bold text-white shadow-lg glow-purple disabled:opacity-50"
-                >
-                  {isParticipating ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Processing...
-                    </span>
-                  ) : launch.status === 'upcoming' ? (
-                    'Coming Soon'
-                  ) : !wallet.connected ? (
-                    'Connect Wallet to Participate'
-                  ) : (
-                    'Participate Now'
-                  )}
-                </button>
+                  <button 
+                    onClick={handleParticipate}
+                    disabled={isParticipating || launch.status === 'upcoming'}
+                    className="w-full btn-glossy py-4 rounded-xl font-bold text-white shadow-lg glow-purple disabled:opacity-50"
+                  >
+                    {isParticipating ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Processing...
+                      </span>
+                    ) : launch.status === 'upcoming' ? (
+                      'Coming Soon'
+                    ) : !wallet.connected ? (
+                      'Connect Wallet to Participate'
+                    ) : (
+                      'Participate Now'
+                    )}
+                  </button>
 
-                <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-                  <span>🔒</span>
-                  <span>Secure transaction via Solana</span>
+                  <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                    <span>🔒</span>
+                    <span>Secure transaction via Solana</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Quick Stats */}
               <div className="mt-6 pt-6 border-t border-white/10">
