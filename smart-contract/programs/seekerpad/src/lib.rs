@@ -1,0 +1,200 @@
+use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program_option::COption;
+use anchor_lang::solana_program::program_pack::Pack;
+
+// Launch state
+#[account]
+pub struct Launch {
+    pub authority: Pubkey,
+    pub mint: Pubkey,
+    pub vault: Pubkey,
+    pub usdc_vault: Pubkey,
+    pub price_per_token: u64,
+    pub raise_target: u64,
+    pub total_raised: u64,
+    pub min_allocation: u64,
+    pub max_allocation: u64,
+    pub start_time: i64,
+    pub end_time: i64,
+    pub tge_time: i64,
+    pub status: u8, // 0: upcoming, 1: live, 2: ended
+    pub launch_type: u8, // 0: standard, 1: elite
+    pub bump: u8,
+}
+
+// User participation
+#[account]
+pub struct Participation {
+    pub user: Pubkey,
+    pub launch: Pubkey,
+    pub amount: u64,
+    pub tokens_received: u64,
+    pub claimed: bool,
+    pub claimable_amount: u64,
+    pub claimed_amount: u64,
+    pub bump: u8,
+}
+
+// NFT eligibility
+#[account]
+pub struct Eligibility {
+    pub user: Pubkey,
+    pub category: u8, // 0: saga, 1: seeker, 2: jupiter, 3: bonk, 4: meteora
+    pub is_verified: bool,
+    pub bump: u8,
+}
+
+// Initialize a new launch
+pub fn initialize_launch(
+    ctx: Context<InitializeLaunch>,
+    price_per_token: u64,
+    raise_target: u64,
+    min_allocation: u64,
+    max_allocation: u64,
+    start_time: i64,
+    end_time: i64,
+    tge_time: i64,
+    launch_type: u8,
+) -> Result<()> {
+    let launch = &mut ctx.accounts.launch;
+    launch.authority = ctx.accounts.authority.key();
+    launch.mint = ctx.accounts.mint.key();
+    launch.vault = ctx.accounts.vault.key();
+    launch.usdc_vault = ctx.accounts.usdc_vault.key();
+    launch.price_per_token = price_per_token;
+    launch.raise_target = raise_target;
+    launch.total_raised = 0;
+    launch.min_allocation = min_allocation;
+    launch.max_allocation = max_allocation;
+    launch.start_time = start_time;
+    launch.end_time = end_time;
+    launch.tge_time = tge_time;
+    launch.status = 0; // upcoming
+    launch.launch_type = launch_type;
+    launch.bump = ctx.bumps.launch;
+
+    msg!("Launch initialized: {}", launch.key());
+    Ok(())
+}
+
+// Participate in a launch
+pub fn participate(ctx: Context<Participate>, amount: u64) -> Result<()> {
+    let launch = &mut ctx.accounts.launch;
+    let participation = &mut ctx.accounts.participation;
+
+    // Check launch is live
+    require!(launch.status == 1, ErrorCode::LaunchNotLive);
+
+    // Check amount within allocation
+    require!(
+        amount >= launch.min_allocation && amount <= launch.max_allocation,
+        ErrorCode::InvalidAllocation
+    );
+
+    // Transfer SOL to vault
+    let cpi_context = CpiContext::new(
+        ctx.accounts.system_program.to_account_info(),
+        anchor_lang::system_program::Transfer {
+            from: ctx.accounts.user.to_account_info(),
+            to: ctx.accounts.vault.to_account_info(),
+        },
+    );
+    anchor_lang::system_program::transfer(cpi_context, amount)?;
+
+    // Calculate tokens received
+    let tokens_received = (amount * 1_000_000_000) / launch.price_per_token;
+    
+    // Record participation
+    participation.user = ctx.accounts.user.key();
+    participation.launch = launch.key();
+    participation.amount = amount;
+    participation.tokens_received = tokens_received;
+    participation.claimed = false;
+    participation.claimable_amount = tokens_received;
+    participation.claimed_amount = 0;
+    participation.bump = ctx.bumps.participation;
+
+    // Update launch
+    launch.total_raised += amount;
+
+    msg!("User {} participated with {} SOL, received {} tokens", 
+        ctx.accounts.user.key(), amount, tokens_received);
+
+    Ok(())
+}
+
+// Claim tokens after TGE
+pub fn claim(ctx: Context<Claim>) -> Result<()> {
+    let participation = &mut ctx.accounts.participation;
+    let launch = &mut ctx.accounts.launch;
+
+    // Check TGE has passed
+    let clock = Clock::get()?;
+    require!(clock.unix_timestamp >= launch.tge_time, ErrorCode::TGENotReached);
+
+    // Check not already claimed
+    require!(!participation.claimed, ErrorCode::AlreadyClaimed);
+
+    // Transfer tokens to user
+    let seeds = &[&[b"launch", &[launch.bump]][..]];
+    let signer = &[&seeds[..]];
+
+    let cpi_context = CpiContext::new_with_signer(
+        ctx.accounts.token_program.to_account_info(),
+        anchor_lang::spl_token::instruction::Transfer {
+            from: launch.vault.to_account_info(),
+            to: ctx.accounts.user_token_account.to_account_info(),
+            authority: launch.vault.to_account_info(),
+        },
+        signer,
+    );
+    
+    // Transfer the claimable amount
+    let tokens_to_claim = participation.claimable_amount;
+    anchor_lang::spl_token::transfer(cpi_context, tokens_to_claim)?;
+
+    // Update participation
+    participation.claimed = true;
+    participation.claimed_amount = tokens_to_claim;
+    participation.claimable_amount = 0;
+
+    msg!("User claimed {} tokens", tokens_to_claim);
+
+    Ok(())
+}
+
+// Update launch status
+pub fn update_launch_status(ctx: Context<UpdateStatus>, new_status: u8) -> Result<()> {
+    let launch = &mut ctx.accounts.launch;
+    launch.status = new_status;
+    msg!("Launch status updated to: {}", new_status);
+    Ok(())
+}
+
+// Verify eligibility
+pub fn verify_eligibility(ctx: Context<VerifyEligibility>, category: u8) -> Result<()> {
+    let eligibility = &mut ctx.accounts.eligibility;
+    eligibility.user = ctx.accounts.user.key();
+    eligibility.category = category;
+    eligibility.is_verified = true;
+    eligibility.bump = ctx.bumps.eligibility;
+    
+    msg!("User {} verified for category {}", eligibility.user, category);
+    Ok(())
+}
+
+#[error]
+pub enum ErrorCode {
+    #[msg("Launch is not live")]
+    LaunchNotLive,
+    #[msg("Invalid allocation amount")]
+    InvalidAllocation,
+    #[msg("TGE not yet reached")]
+    TGENotReached,
+    #[msg("Already claimed")]
+    AlreadyClaimed,
+    #[msg("Unauthorized")]
+    Unauthorized,
+    #[msg("NFT required for elite launch")]
+    NFTRequired,
+}

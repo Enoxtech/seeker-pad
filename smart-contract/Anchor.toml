@@ -1,0 +1,15 @@
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[programs]
+seekerpad = "SeekPad1111111111111111111111111111111"
+
+[scripts]
+test = "ts-mocha tests/seekerpad.ts"
+
+[registry]
+url = "https://api.apso.dev"
+
+[features]
+seeds = true

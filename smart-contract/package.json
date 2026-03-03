@@ -1,0 +1,23 @@
+{
+  "name": "seekerpad-contract",
+  "version": "0.1.0",
+  "description": "SeekerPad Solana Smart Contract",
+  "scripts": {
+    "anchor": "anchor",
+    "build": "anchor build",
+    "test": "anchor test",
+    "deploy": "anchor deploy",
+    "verify": "anchor verify"
+  },
+  "dependencies": {
+    "@project-serum/anchor": "^0.26.0"
+  },
+  "devDependencies": {
+    "@project-serum/anchor-cli": "^0.26.0",
+    "@solana-developers/helpers": "^2.0.0",
+    "chai": "^4.4.1",
+    "mocha": "^10.3.0",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.3.3"
+  }
+}
