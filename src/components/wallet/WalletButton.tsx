@@ -1,9 +1,9 @@
 'use client';
 
-import { useWallet, formatAddress } from './WalletContext';
+import { useWallet, formatAddress } from './useWallet';
 
 export default function WalletButton() {
-  const { wallet, connect, disconnect, isConnecting } = useWallet();
+  const { wallet, disconnect, isConnecting, openWalletModal } = useWallet();
 
   if (wallet.connected) {
     return (
@@ -15,7 +15,7 @@ export default function WalletButton() {
           <span className="text-purple-400 font-medium">{formatAddress(wallet.publicKey)}</span>
         </div>
         <button
-          onClick={disconnect}
+          onClick={() => disconnect()}
           className="px-4 py-2 rounded-xl font-medium text-gray-400 hover:text-white border border-white/10 hover:border-white/20 transition-all"
         >
           Disconnect
@@ -26,7 +26,7 @@ export default function WalletButton() {
 
   return (
     <button
-      onClick={connect}
+      onClick={openWalletModal}
       disabled={isConnecting}
       className="btn-glossy px-5 py-2.5 rounded-xl font-semibold text-white shadow-lg glow-purple disabled:opacity-50"
     >

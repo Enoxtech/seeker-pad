@@ -1,15 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { WalletProvider, useWallet, formatAddress } from './wallet/WalletContext';
+import { useWallet, formatAddress } from './wallet/useWallet';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 function HeaderContent() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState('dark');
-  const [walletModalOpen, setWalletModalOpen] = useState(false);
-  const { wallet, connect, disconnect, isConnecting } = useWallet();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { wallet, disconnect, isConnecting } = useWallet();
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const notifications = [
+    { id: 1, type: 'launch', title: 'New Launch!', message: 'Bonkify is now live', time: '2h ago', unread: true },
+    { id: 2, type: 'claim', title: 'Tokens Ready', message: 'Claim your SVW tokens', time: '1d ago', unread: true },
+    { id: 3, type: 'update', title: 'TGE Announced', message: 'SeedVault TGE on March 5', time: '2d ago', unread: false },
+  ];
 
   useEffect(() => {
     const stored = localStorage.getItem('theme');
@@ -19,7 +27,18 @@ function HeaderContent() {
     }
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotificationsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -29,13 +48,20 @@ function HeaderContent() {
     document.documentElement.setAttribute('data-theme', newTheme);
   };
 
+  const unreadCount = notifications.filter(n => n.unread).length;
+
+  const navItems = [
+    { href: '/', label: 'Launches', icon: '🚀' },
+    { href: '/portfolio', label: 'Portfolio', icon: '💼' },
+    { href: '/nft', label: 'NFT', icon: '🎫' },
+    { href: '/elite', label: 'Elite', icon: '⭐' },
+    { href: '/profile', label: 'Profile', icon: '👤' },
+  ];
+
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled ? 'glass border-b border-white/5 py-3' : 'bg-transparent py-5'
-    }`}>
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'glass border-b border-white/5 py-3' : 'bg-transparent py-5'}`}>
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between">
-          {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-600/30 float">
               <span className="text-xl">🚀</span>
@@ -43,27 +69,56 @@ function HeaderContent() {
             <span className="text-xl font-bold text-white group-hover:gradient-text transition-all">SeekerPad</span>
           </Link>
 
-          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="px-4 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all text-sm font-medium"
-              >
+              <Link key={item.href} href={item.href} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all text-sm font-medium">
                 {item.label}
               </Link>
             ))}
           </nav>
 
-          {/* Right Side */}
           <div className="flex items-center gap-3">
-            {/* Theme Toggle - Crystal Style */}
-            <button
-              onClick={toggleTheme}
-              className="crystal-card p-2.5 group relative overflow-hidden"
-              aria-label="Toggle theme"
-            >
+            <div className="relative" ref={notifRef}>
+              <button onClick={() => setNotificationsOpen(!notificationsOpen)} className="crystal-card p-2.5 group" aria-label="Notifications">
+                <div className="relative">
+                  <svg className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
+              </button>
+
+              {notificationsOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 crystal-card rounded-xl overflow-hidden animate-float">
+                  <div className="p-4 border-b border-white/10">
+                    <h3 className="text-white font-bold">Notifications</h3>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.map((notif) => (
+                      <div key={notif.id} className={`p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${notif.unread ? 'bg-purple-500/5' : ''}`}>
+                        <div className="flex items-start gap-3">
+                          <div className={`w-2 h-2 rounded-full mt-2 ${notif.unread ? 'bg-purple-500' : 'bg-transparent'}`} />
+                          <div className="flex-1">
+                            <div className="text-white font-medium text-sm">{notif.title}</div>
+                            <div className="text-gray-400 text-xs">{notif.message}</div>
+                            <div className="text-gray-500 text-xs mt-1">{notif.time}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="p-3 border-t border-white/10">
+                    <button className="w-full text-center text-purple-400 text-sm hover:text-purple-300">View All Notifications</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button onClick={toggleTheme} className="crystal-card p-2.5 group relative overflow-hidden" aria-label="Toggle theme">
               <div className="relative z-10 w-8 h-8 flex items-center justify-center transition-transform duration-500 group-hover:rotate-180">
                 {theme === 'dark' ? (
                   <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -77,33 +132,27 @@ function HeaderContent() {
               </div>
             </button>
 
-            {/* Wallet Button - Shows connected state */}
+            {/* Custom Wallet Button */}
             {wallet.connected ? (
               <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setWalletModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 glass rounded-xl"
-                >
+                <div className="flex items-center gap-2 px-3 py-1.5 glass rounded-xl">
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-white font-medium">{wallet.balance?.toFixed(2)} SOL</span>
+                  <span className="text-white text-sm font-medium">{wallet.balance?.toFixed(2)} SOL</span>
                   <span className="text-gray-400">|</span>
-                  <span className="text-purple-400">{formatAddress(wallet.publicKey)}</span>
+                  <span className="text-purple-400 text-sm">{formatAddress(wallet.publicKey)}</span>
+                </div>
+                <button
+                  onClick={() => disconnect()}
+                  className="px-3 py-1.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white border border-white/10 hover:border-white/20 transition-all"
+                >
+                  Disconnect
                 </button>
               </div>
             ) : (
-              <button 
-                onClick={() => setWalletModalOpen(true)}
-                className="btn-glossy px-5 py-2.5 rounded-xl font-semibold text-white shadow-lg glow-purple"
-              >
-                Connect
-              </button>
+              <WalletMultiButton className="!btn-glossy !px-4 !py-2 !rounded-xl !text-sm !font-semibold !text-white" />
             )}
 
-            {/* Mobile Menu */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
-            >
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {mobileMenuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -115,16 +164,10 @@ function HeaderContent() {
           </div>
         </div>
 
-        {/* Mobile Nav */}
         {mobileMenuOpen && (
           <nav className="md:hidden py-4 border-t border-white/10 mt-4 space-y-1">
             {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
-              >
+              <Link key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
                 <span>{item.icon}</span>
                 <span>{item.label}</span>
               </Link>
@@ -132,27 +175,10 @@ function HeaderContent() {
           </nav>
         )}
       </div>
-
-      {/* Wallet Modal */}
-      <WalletModal isOpen={walletModalOpen} onClose={() => setWalletModalOpen(false)} />
     </header>
   );
 }
 
-const navItems = [
-  { href: '/', label: 'Launches', icon: '🚀' },
-  { href: '/portfolio', label: 'Portfolio', icon: '💼' },
-  { href: '/nft', label: 'NFT', icon: '🎫' },
-  { href: '/elite', label: 'Elite', icon: '⭐' },
-  { href: '/profile', label: 'Profile', icon: '👤' },
-];
-
-import WalletModal from './wallet/WalletModal';
-
 export default function Header() {
-  return (
-    <WalletProvider>
-      <HeaderContent />
-    </WalletProvider>
-  );
+  return <HeaderContent />;
 }

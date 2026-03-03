@@ -25,9 +25,13 @@ export default function Launchpad() {
     .filter((l) => statusFilter === 'all' || l.status === statusFilter)
     .filter((l) => typeFilter === 'all' || l.type === typeFilter)
     .sort((a, b) => {
-      if (sortBy === 'date') return new Date(b.timeline.startTime).getTime() - new Date(a.timeline.startTime).getTime();
-      if (sortBy === 'raise') return b.tokenomics.raiseTarget - a.tokenomics.raiseTarget;
-      return a.tokenomics.pricePerToken - b.tokenomics.pricePerToken;
+      const aTimeline = a.timeline || { startTime: a.startTime || new Date() };
+      const bTimeline = b.timeline || { startTime: b.startTime || new Date() };
+      if (sortBy === 'date') return new Date(bTimeline.startTime).getTime() - new Date(aTimeline.startTime).getTime();
+      const aTokenomics = a.tokenomics || { raiseTarget: a.hardCap || 0, pricePerToken: a.launchPrice || 0 };
+      const bTokenomics = b.tokenomics || { raiseTarget: b.hardCap || 0, pricePerToken: b.launchPrice || 0 };
+      if (sortBy === 'raise') return bTokenomics.raiseTarget - aTokenomics.raiseTarget;
+      return aTokenomics.pricePerToken - bTokenomics.pricePerToken;
     });
 
   return (
@@ -125,7 +129,7 @@ export default function Launchpad() {
                         launch.status === 'upcoming' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
                         'bg-gray-500/20 text-gray-400 border-gray-500/30'
                       }`}>
-                        {launch.status.toUpperCase()}
+                        {launch.status?.toUpperCase() || 'UPCOMING'}
                       </span>
                     </div>
                   </div>
@@ -136,11 +140,11 @@ export default function Launchpad() {
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <span className="text-gray-500">Raise</span>
-                      <div className="text-white font-semibold">${(launch.tokenomics.raiseTarget / 1e6).toFixed(1)}M</div>
+                      <div className="text-white font-semibold">${(((launch.tokenomics?.raiseTarget ?? launch.hardCap) ?? 0) / 1e6).toFixed(1)}M</div>
                     </div>
                     <div>
                       <span className="text-gray-500">Price</span>
-                      <div className="text-white font-semibold">${launch.tokenomics.pricePerToken}</div>
+                      <div className="text-white font-semibold">${launch.tokenomics?.pricePerToken ?? launch.launchPrice ?? 0}</div>
                     </div>
                   </div>
                 </div>

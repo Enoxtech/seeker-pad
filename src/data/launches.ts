@@ -1,4 +1,4 @@
-import { Launch, Participation, NFT, Eligibility } from '@/types';
+import { Launch, Participation, SeekerPadNFT, EligibilityStatus } from '@/types';
 
 // Mock data store
 // In production, these would be API calls
@@ -28,18 +28,23 @@ export async function getUserParticipations(address: string): Promise<Participat
   return mockParticipations;
 }
 
-export async function checkEligibility(address: string): Promise<Eligibility> {
+export async function checkEligibility(address: string): Promise<EligibilityStatus> {
   await new Promise((resolve) => setTimeout(resolve, 1000));
   return {
-    sagaGenesis: false,
-    seekerPioneer: true,
-    jupiterAligned: false,
-    bonkCommunity: false,
-    meteoraLP: false,
+    isEligible: true,
+    hasNFT: false,
+    nftCount: 0,
+    categories: [
+      { category: 'saga-genesis', isEligible: false },
+      { category: 'seeker-pioneer', isEligible: true },
+      { category: 'jupiter-aligned', isEligible: false },
+      { category: 'bonk-community', isEligible: false },
+      { category: 'meteora-lp', isEligible: false },
+    ],
   };
 }
 
-export async function getUserNFTs(address: string): Promise<NFT[]> {
+export async function getUserNFTs(address: string): Promise<SeekerPadNFT[]> {
   await new Promise((resolve) => setTimeout(resolve, 100));
   return mockNFTs;
 }
@@ -144,7 +149,7 @@ const mockParticipations: Participation[] = [
   },
 ];
 
-const mockNFTs: NFT[] = [
+const mockNFTs: SeekerPadNFT[] = [
   {
     id: 'nft1',
     category: 'seeker-pioneer',

@@ -159,6 +159,39 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Token Price Chart */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="crystal-card p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2">SOL Price</h2>
+                <p className="text-gray-400 text-sm">Live price from Jupiter Aggregator</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <div className="text-3xl font-bold text-white">$142.85</div>
+                  <div className="text-sm text-green-400">+2.4% (24h)</div>
+                </div>
+              </div>
+            </div>
+            {/* Chart Placeholder */}
+            <div className="h-48 flex items-end justify-between gap-2 px-4">
+              {[35, 45, 38, 52, 48, 60, 55, 68, 62, 75, 70, 85, 78, 90, 82, 95, 88, 100].map((height, i) => (
+                <div key={i} className="flex-1 bg-gradient-to-t from-purple-600/50 to-pink-600/50 rounded-t" style={{ height: `${height}%` }} />
+              ))}
+            </div>
+            <div className="flex justify-between mt-2 text-xs text-gray-500">
+              <span>1H</span>
+              <span>24H</span>
+              <span>7D</span>
+              <span>30D</span>
+              <span>1Y</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Launches */}
       <section id="launches" className="py-16 px-4">
         <div className="max-w-6xl mx-auto">

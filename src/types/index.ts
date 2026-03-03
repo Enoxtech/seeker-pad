@@ -43,8 +43,8 @@ export interface Launch {
   name: string
   symbol: string
   description: string
-  logoUrl: string
-  websiteUrl: string
+  logoUrl?: string
+  websiteUrl?: string
   twitterUrl?: string
   telegramUrl?: string
   website?: string
@@ -52,31 +52,31 @@ export interface Launch {
   imageUrl?: string
   
   // Sale details
-  type: LaunchType
-  status: LaunchStatus
+  type?: LaunchType
+  status?: LaunchStatus
   
   // Tokenomics (new format)
-  totalSupply: number
-  initialLiquidityPercent: number
-  launchPrice: number
+  totalSupply?: number
+  initialLiquidityPercent?: number
+  launchPrice?: number
   tokenomics?: Tokenomics
   
   // Allocation
-  totalRaised: number
-  hardCap: number
-  minAllocation: number
-  maxAllocation: number
+  totalRaised?: number
+  hardCap?: number
+  minAllocation?: number
+  maxAllocation?: number
   
   // Timing
-  startTime: Date
-  endTime: Date
-  claimTime: Date
+  startTime?: Date
+  endTime?: Date
+  claimTime?: Date
   timeline?: Timeline
   
   // Vesting
-  vestingPeriod: number
-  vestingCliff: number
-  initialUnlockPercent: number
+  vestingPeriod?: number
+  vestingCliff?: number
+  initialUnlockPercent?: number
   
   // Elite specific
   eliteAllocationPercent?: number
@@ -86,34 +86,35 @@ export interface Launch {
   team?: string
   
   // Stats
-  participants: number
+  participants?: number
 }
 
 // User participation in a launch
 export interface Participation {
-  id: string
-  launchId: string
-  userAddress: string
-  amount: number
-  tokensReceived: number
-  claimedAmount: number
-  claimableAmount: number
-  tier: TierLevel
-  isElite: boolean
-  status: 'pending' | 'claimed' | 'vesting'
-  createdAt: Date
-  updatedAt: Date
+  id?: string
+  launchId?: string
+  userAddress?: string
+  amount?: number
+  tokenAmount?: number
+  tokensReceived?: number
+  claimedAmount?: number
+  claimableAmount?: number
+  tier?: TierLevel
+  isElite?: boolean
+  status?: 'pending' | 'claimed' | 'vesting'
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 // User's NFT
 export interface SeekerPadNFT {
-  id: string
-  mintAddress: string
-  ownerAddress: string
-  category: EligibilityCategory
-  mintDate: Date
-  eliteAccess: boolean
-  metadataUrl: string
+  id?: string
+  mintAddress?: string
+  ownerAddress?: string
+  category?: EligibilityCategory
+  mintDate?: Date
+  eliteAccess?: boolean
+  metadataUrl?: string
 }
 
 // User's eligibility status

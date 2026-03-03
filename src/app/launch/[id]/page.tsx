@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useWallet } from '@/components/wallet/useWallet';
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import ParticipateButton from '@/components/ParticipateButton';
 
 const launchData: Record<string, {
   name: string;
@@ -77,9 +80,46 @@ export default function LaunchDetail() {
   const params = useParams();
   const id = params?.id as string;
   const [solAmount, setSolAmount] = useState('');
+  const [isParticipating, setIsParticipating] = useState(false);
+  const [participationSuccess, setParticipationSuccess] = useState(false);
   
+  const { wallet, connect, openWalletModal } = useWallet();
   const launch = launchData[id] || launchData['1'];
+  
   const tokensReceived = solAmount ? (parseFloat(solAmount) / launch.tokenomics.pricePerToken).toLocaleString() : '0';
+
+  const handleParticipate = async () => {
+    if (!wallet.connected) {
+      openWalletModal();
+      return;
+    }
+
+    if (!solAmount || parseFloat(solAmount) <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    if (parseFloat(solAmount) > (wallet.balance || 0)) {
+      alert('Insufficient balance');
+      return;
+    }
+
+    setIsParticipating(true);
+
+    // Simulate participation (in production, this would send a real transaction)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setParticipationSuccess(true);
+      setSolAmount('');
+    } catch (error) {
+      console.error('Participation error:', error);
+      alert('Failed to participate. Please try again.');
+    } finally {
+      setIsParticipating(false);
+    }
+  };
+
+  const isLive = launch.status === 'live';
 
   return (
     <div className="min-h-screen pt-24 pb-16 page-enter">
@@ -237,6 +277,14 @@ export default function LaunchDetail() {
                 {launch.status === 'upcoming' ? 'Upcoming Sale' : 'Participate'}
               </h2>
               
+              {/* Success Message */}
+              {participationSuccess && (
+                <div className="mb-4 p-4 bg-green-500/20 border border-green-500/30 rounded-xl">
+                  <div className="text-green-400 font-medium text-sm">✅ Participation Successful!</div>
+                  <div className="text-gray-400 text-xs mt-1">Your tokens will be claimable after TGE</div>
+                </div>
+              )}
+              
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-400 text-sm mb-2">Amount (SOL)</label>
@@ -245,7 +293,7 @@ export default function LaunchDetail() {
                     placeholder="0.00"
                     value={solAmount}
                     onChange={(e) => setSolAmount(e.target.value)}
-                    disabled={launch.status === 'upcoming'}
+                    disabled={launch.status === 'upcoming' || !wallet.connected}
                     className="w-full glass text-white px-4 py-4 rounded-xl focus:outline-none focus:border-purple-500/50 transition-colors placeholder-gray-500 disabled:opacity-50"
                   />
                   <p className="text-gray-400 text-sm mt-2">
@@ -254,10 +302,25 @@ export default function LaunchDetail() {
                 </div>
 
                 <button 
-                  className="w-full btn-glossy py-4 rounded-xl font-bold text-white shadow-lg glow-purple"
-                  disabled={launch.status === 'upcoming'}
+                  onClick={handleParticipate}
+                  disabled={isParticipating || launch.status === 'upcoming'}
+                  className="w-full btn-glossy py-4 rounded-xl font-bold text-white shadow-lg glow-purple disabled:opacity-50"
                 >
-                  {launch.status === 'upcoming' ? 'Coming Soon' : 'Participate Now'}
+                  {isParticipating ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Processing...
+                    </span>
+                  ) : launch.status === 'upcoming' ? (
+                    'Coming Soon'
+                  ) : !wallet.connected ? (
+                    'Connect Wallet to Participate'
+                  ) : (
+                    'Participate Now'
+                  )}
                 </button>
 
                 <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
@@ -271,7 +334,9 @@ export default function LaunchDetail() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Your Balance</span>
-                    <span className="text-white font-medium">12.5 SOL</span>
+                    <span className="text-white font-medium">
+                      {wallet.connected ? `${wallet.balance?.toFixed(4) || 0} SOL` : '—'}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Min Buy</span>
@@ -286,7 +351,7 @@ export default function LaunchDetail() {
             </div>
 
             {/* Eligible NFTs */}
-            {launch.status !== 'upcoming' && (
+            {launch.status !== 'upcoming' && wallet.connected && (
               <div className="crystal-card rounded-2xl p-6">
                 <h2 className="text-lg font-bold text-white mb-4">Your Eligible NFTs</h2>
                 <div className="space-y-3">

@@ -19,7 +19,7 @@ export function useWalletState() {
     setLoading(true);
     try {
       // Use a default connection - in production, this would come from config
-      const connection = new Connection('https://api.mainnet-beta.solana.com');
+      const connection = new Connection('https://api.devnet.solana.com');
       const bal = await connection.getBalance(publicKey);
       setBalance(bal / 1e9); // Convert lamports to SOL
     } catch (error) {
@@ -79,8 +79,6 @@ export function useEligible() {
  * Hook for handling wallet connection errors
  */
 export function useWalletError() {
-  const { connection } = useConnection?.() || {};
-  
   // This would be expanded to handle specific wallet errors
   const getErrorMessage = (error: unknown): string => {
     if (error instanceof Error) {

@@ -1,6 +1,14 @@
 import "./globals.css";
+import "@solana/wallet-adapter-react-ui/styles.css";
+import dynamic from 'next/dynamic';
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeSwitch/ThemeProvider";
+
+const WalletAdapterProvider = dynamic(
+  () => import('@/components/wallet/WalletAdapterProvider').then(mod => mod.default),
+  { ssr: false }
+);
 
 export const metadata = {
   title: "SeekerPad - Solana Mobile Launchpad",
@@ -16,36 +24,15 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen noise">
         <ThemeProvider>
-          <div className="animated-bg min-h-screen">
-            <Header />
-            <main>{children}</main>
-            <Footer />
-          </div>
+          <WalletAdapterProvider>
+            <div className="animated-bg min-h-screen flex flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+          </WalletAdapterProvider>
         </ThemeProvider>
       </body>
     </html>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="border-t border-white/10 py-12 px-4 mt-20">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center font-bold text-white">
-              SP
-            </div>
-            <span className="text-gray-500">© 2025 SeekerPad</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <a href="#" className="text-gray-500 hover:text-purple-400 transition-colors text-sm">Terms</a>
-            <a href="#" className="text-gray-500 hover:text-purple-400 transition-colors text-sm">Privacy</a>
-            <a href="#" className="text-gray-500 hover:text-purple-400 transition-colors text-sm">Discord</a>
-            <a href="#" className="text-gray-500 hover:text-purple-400 transition-colors text-sm">Twitter</a>
-          </div>
-        </div>
-      </div>
-    </footer>
   );
 }
