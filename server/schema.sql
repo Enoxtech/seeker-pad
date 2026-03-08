@@ -175,3 +175,23 @@ CREATE TRIGGER update_participations_updated_at
     BEFORE UPDATE ON participations
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
+
+-- Project Applications
+CREATE TABLE IF NOT EXISTS project_applications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_name VARCHAR(255) NOT NULL,
+    symbol VARCHAR(20) NOT NULL,
+    description TEXT,
+    website VARCHAR(500),
+    twitter VARCHAR(500),
+    telegram VARCHAR(500),
+    whitepaper_url VARCHAR(500),
+    tokenomics JSONB,
+    team_info JSONB,
+    contact_email VARCHAR(255) NOT NULL,
+    launch_type VARCHAR(20) DEFAULT 'standard',
+    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+    notes TEXT,
+    submitted_at TIMESTAMP DEFAULT NOW(),
+    reviewed_at TIMESTAMP
+);

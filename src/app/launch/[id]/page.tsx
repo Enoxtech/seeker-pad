@@ -1,428 +1,402 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useWallet } from '@/components/wallet/useWallet';
-import { createParticipation, getUserParticipation } from '@/data/launches';
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import Link from 'next/link'
+import { getLaunchById, getUserParticipation, createParticipation } from '@/data/launches'
+import { useWallet } from '@/contexts/WalletContextProvider'
+import type { Launch, Participation } from '@/types'
 
-const launchData: Record<string, {
-  name: string;
-  symbol: string;
-  description: string;
-  tokenomics: { totalSupply: number; raiseTarget: number; pricePerToken: number; communityPercent: number; liquidityPercent: number; teamPercent: number; marketingPercent: number };
-  timeline: { startTime: string; endTime: string; tgeDate: string; vestingDuration: number; vestingCliff: number };
-  status: string;
-  type: string;
-  website: string;
-  twitter: string;
-  progress: number;
-  participants: number;
-}> = {
-  '1': {
-    name: 'Bonkify',
-    symbol: 'BKFY',
-    description: 'Mobile-first meme coin trading platform built specifically for Seeker and Saga users. Trade meme coins with zero fees on mobile.',
-    tokenomics: { totalSupply: 5000000000, raiseTarget: 2000000, pricePerToken: 0.001, communityPercent: 75, liquidityPercent: 12, teamPercent: 5, marketingPercent: 8 },
-    timeline: { startTime: '2025-03-25T14:00:00Z', endTime: '2025-03-25T20:00:00Z', tgeDate: '2025-04-05T12:00:00Z', vestingDuration: 6, vestingCliff: 1 },
-    status: 'live',
-    type: 'elite',
-    website: '#',
-    twitter: '@bonkify',
-    progress: 78,
-    participants: 1250,
-  },
-  '2': {
-    name: 'SolanaSaga Phone',
-    symbol: 'SAGA',
-    description: 'The next generation blockchain phone. Own your keys, own your crypto.',
-    tokenomics: { totalSupply: 1000000000, raiseTarget: 5000000, pricePerToken: 0.005, communityPercent: 60, liquidityPercent: 15, teamPercent: 10, marketingPercent: 15 },
-    timeline: { startTime: '2025-04-01T14:00:00Z', endTime: '2025-04-07T20:00:00Z', tgeDate: '2025-04-15T12:00:00Z', vestingDuration: 12, vestingCliff: 3 },
-    status: 'upcoming',
-    type: 'standard',
-    website: '#',
-    twitter: '@solanamobile',
-    progress: 0,
-    participants: 0,
-  },
-  '3': {
-    name: 'SeekerX',
-    symbol: 'SKRX',
-    description: 'DeFi suite built for the Seeker ecosystem. Staking, yield farming, and more.',
-    tokenomics: { totalSupply: 100000000, raiseTarget: 1000000, pricePerToken: 0.01, communityPercent: 70, liquidityPercent: 10, teamPercent: 10, marketingPercent: 10 },
-    timeline: { startTime: '2025-03-20T14:00:00Z', endTime: '2025-03-22T20:00:00Z', tgeDate: '2025-03-30T12:00:00Z', vestingDuration: 6, vestingCliff: 1 },
-    status: 'ended',
-    type: 'elite',
-    website: '#',
-    twitter: '@seekerx',
-    progress: 100,
-    participants: 3420,
-  },
-};
-
-function formatCurrency(num: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(num);
+interface Props {
+  params: Promise<{ id: string }>
 }
 
-function formatNumber(num: number): string {
-  if (num >= 1000000000) return (num / 1000000000).toFixed(0) + 'B';
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-  if (num >= 1000) return (num / 1000).toFixed(0) + 'K';
-  return num.toString();
-}
-
-function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-export default function LaunchDetail() {
-  const params = useParams();
-  const id = params?.id as string;
-  const [solAmount, setSolAmount] = useState('');
-  const [isParticipating, setIsParticipating] = useState(false);
-  const [participationSuccess, setParticipationSuccess] = useState(false);
-  const [userParticipation, setUserParticipation] = useState<any>(null);
+export default function LaunchDetailPage({ params }: Props) {
+  const { id } = use(params)
+  const router = useRouter()
+  const { connected, address, connect } = useWallet()
   
-  const { wallet, openWalletModal } = useWallet();
-  const launch = launchData[id] || launchData['1'];
-  
-  const tokensReceived = solAmount ? (parseFloat(solAmount) / launch.tokenomics.pricePerToken).toLocaleString() : '0';
+  const [launch, setLaunch] = useState<Launch | null>(null)
+  const [participation, setParticipation] = useState<Participation | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [participating, setParticipating] = useState(false)
+  const [amount, setAmount] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [timeLeft, setTimeLeft] = useState('')
 
-  // Fetch user's existing participation
   useEffect(() => {
-    if (wallet.connected && wallet.publicKey) {
-      getUserParticipation(wallet.publicKey, id).then(setUserParticipation).catch(console.error);
+    async function loadData() {
+      try {
+        const launchData = await getLaunchById(id)
+        setLaunch(launchData || null)
+        
+        if (address) {
+          const part = await getUserParticipation(address, id)
+          setParticipation(part)
+        }
+      } catch (error) {
+        console.error('Failed to load launch:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [wallet.connected, wallet.publicKey, id]);
+    loadData()
+  }, [id, address])
+
+  useEffect(() => {
+    if (!launch?.startTime || !launch?.endTime) return
+    
+    const updateTimer = () => {
+      const now = new Date()
+      const start = new Date(launch.startTime!)
+      const end = new Date(launch.endTime!)
+      
+      let target = start
+      let label = 'Starts in'
+      
+      if (now >= end) {
+        setTimeLeft('Ended')
+        return
+      } else if (now >= start) {
+        target = end
+        label = 'Ends in'
+      } else {
+        label = 'Starts in'
+      }
+      
+      const diff = target.getTime() - now.getTime()
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+      
+      let timeStr = ''
+      if (days > 0) timeStr += `${days}d `
+      if (hours > 0 || days > 0) timeStr += `${hours}h `
+      timeStr += `${minutes}m ${seconds}s`
+      
+      setTimeLeft(timeStr)
+    }
+    
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
+    return () => clearInterval(interval)
+  }, [launch?.startTime, launch?.endTime])
 
   const handleParticipate = async () => {
-    if (!wallet.connected) {
-      openWalletModal();
-      return;
+    if (!connected) {
+      await connect()
+      return
     }
-
-    if (!solAmount || parseFloat(solAmount) <= 0) {
-      alert('Please enter a valid amount');
-      return;
-    }
-
-    if (parseFloat(solAmount) > (wallet.balance || 0)) {
-      alert('Insufficient balance');
-      return;
-    }
-
-    setIsParticipating(true);
-
+    
+    if (!amount || parseFloat(amount) <= 0) return
+    
+    setParticipating(true)
     try {
-      // In production, this would send a real transaction
-      // For now, simulate and also try the API if available
-      const mockSignature = `mock_${Date.now()}`;
-      
-      await createParticipation({
+      const part = await createParticipation({
         launchId: id,
-        userAddress: wallet.publicKey!,
-        amountSol: parseFloat(solAmount),
-        txSignature: mockSignature,
-      });
-      
-      setParticipationSuccess(true);
-      setSolAmount('');
-      
-      // Refresh participation
-      const participation = await getUserParticipation(wallet.publicKey!, id);
-      setUserParticipation(participation);
+        userAddress: address!,
+        amountSol: parseFloat(amount),
+        txSignature: 'mock_sig_' + Date.now(),
+      })
+      setParticipation(part)
+      setShowModal(false)
+      setAmount('')
     } catch (error) {
-      console.error('Participation error:', error);
-      alert('Failed to participate. Please try again.');
+      console.error('Participation failed:', error)
     } finally {
-      setIsParticipating(false);
+      setParticipating(false)
     }
-  };
+  }
 
-  const isLive = launch.status === 'live';
-  const hasParticipated = userParticipation && userParticipation.status !== 'claimed';
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    )
+  }
+
+  if (!launch) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl text-white mb-4">Launch Not Found</h1>
+          <Link href="/launchpad" className="text-cyan-400 hover:underline">
+            Back to Launchpad
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const progress = launch.hardCap ? Math.min(((launch.totalRaised || 0) / launch.hardCap) * 100, 100) : 0
+  const isLive = launch.status === 'live'
+  const isEnded = launch.status === 'ended'
 
   return (
-    <div className="min-h-screen pt-24 pb-16 page-enter">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
       {/* Header */}
-      <div className="glass border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors">
-            <span>←</span> Back to Launches
-          </Link>
-
-          <div className="flex flex-col lg:flex-row gap-6">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-4xl font-bold text-white shadow-lg shadow-purple-600/30 float">
-              {launch.symbol.charAt(0)}
-            </div>
-
-            <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-3 mb-2">
-                <h1 className="text-2xl lg:text-3xl font-bold text-white">{launch.name}</h1>
-                {launch.type === 'elite' && (
-                  <span className="px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg">
-                    ELITE
-                  </span>
-                )}
-                <span className={`px-3 py-1 text-sm font-medium rounded-full border ${
-                  launch.status === 'live' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                  launch.status === 'upcoming' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                  'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                }`}>
-                  {launch.status.toUpperCase()}
-                </span>
+      <header className="border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">S</span>
               </div>
-              <p className="text-gray-400 mb-4">${launch.symbol}</p>
-              <p className="text-gray-300 max-w-2xl mb-4">{launch.description}</p>
-              <div className="flex gap-4">
-                <a href={launch.website} className="text-purple-400 hover:text-purple-300 transition-colors">🌐 Website</a>
-                <a href={`https://twitter.com/${launch.twitter.replace('@', '')}`} className="text-purple-400 hover:text-purple-300 transition-colors">🐦 Twitter</a>
-              </div>
+              <span className="text-xl font-bold text-white">SeekerPad</span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/launchpad" className="text-slate-300 hover:text-white transition-colors">
+                Launches
+              </Link>
+              <Link href="/elite" className="text-slate-300 hover:text-white transition-colors">
+                Elite
+              </Link>
+              <Link href="/portfolio" className="text-slate-300 hover:text-white transition-colors">
+                Portfolio
+              </Link>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back Button */}
+        <Link 
+          href="/launchpad" 
+          className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Launches
+        </Link>
+
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Progress */}
-            {launch.status !== 'upcoming' && (
-              <div className="crystal-card rounded-2xl p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-white">Sale Progress</h2>
-                  <span className="text-2xl font-bold gradient-text">{launch.progress}%</span>
-                </div>
-                <div className="h-4 bg-white/10 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 rounded-full transition-all"
-                    style={{ width: `${launch.progress}%` }}
-                  />
-                </div>
-                <div className="flex justify-between mt-3 text-sm">
-                  <span className="text-gray-400">Raised: <span className="text-white font-medium">{formatCurrency(launch.tokenomics.raiseTarget * launch.progress / 100)}</span></span>
-                  <span className="text-gray-400">Target: <span className="text-white font-medium">{formatCurrency(launch.tokenomics.raiseTarget)}</span></span>
-                </div>
-                {launch.participants > 0 && (
-                  <div className="mt-4 pt-4 border-t border-white/5">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Participants</span>
-                      <span className="text-white font-medium">{launch.participants.toLocaleString()}</span>
-                    </div>
+            {/* Hero Card */}
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-xl flex items-center justify-center">
+                    <span className="text-2xl font-bold text-white">{launch.symbol?.slice(0, 2)}</span>
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* User's Participation */}
-            {hasParticipated && (
-              <div className="crystal-card rounded-2xl p-6 border-2 border-green-500/30">
-                <h2 className="text-xl font-bold text-white mb-4">✅ You Participated!</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="glass rounded-xl p-4">
-                    <div className="text-gray-400 text-sm mb-1">You Contributed</div>
-                    <div className="text-white font-bold text-xl">{userParticipation?.amount} SOL</div>
-                  </div>
-                  <div className="glass rounded-xl p-4">
-                    <div className="text-gray-400 text-sm mb-1">Tokens Received</div>
-                    <div className="gradient-text font-bold text-xl">{userParticipation?.tokenAmount?.toLocaleString() || '0'}</div>
+                  <div>
+                    <h1 className="text-3xl font-bold text-white">{launch.name}</h1>
+                    <p className="text-slate-400">${launch.symbol}</p>
                   </div>
                 </div>
-                <div className="mt-4 p-3 bg-blue-500/20 rounded-xl text-blue-400 text-sm">
-                  📋 Tokens will be claimable after TGE
+                <div className="flex gap-2">
+                  {launch.type === 'elite' && (
+                    <span className="px-3 py-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full text-purple-400 text-sm font-medium">
+                      Elite
+                    </span>
+                  )}
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    isLive 
+                      ? 'bg-green-500/20 border border-green-500/30 text-green-400'
+                      : isEnded
+                        ? 'bg-slate-500/20 border border-slate-500/30 text-slate-400'
+                        : 'bg-blue-500/20 border border-blue-500/30 text-blue-400'
+                  }`}>
+                    {isLive ? '● Live' : isEnded ? 'Ended' : 'Upcoming'}
+                  </span>
                 </div>
               </div>
-            )}
+              
+              <p className="text-slate-300 leading-relaxed">{launch.description}</p>
+              
+              {/* Timer */}
+              <div className="mt-6 p-4 bg-slate-900/50 rounded-xl">
+                <div className="text-center">
+                  <p className="text-slate-400 text-sm mb-1">
+                    {isLive ? 'Sale Ends In' : isEnded ? 'Sale Ended' : 'Sale Starts In'}
+                  </p>
+                  <p className="text-2xl font-mono font-bold text-white">{timeLeft}</p>
+                </div>
+              </div>
+            </div>
 
             {/* Tokenomics */}
-            <div className="crystal-card rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-white mb-6">Tokenomics</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {[
-                  ['Total Supply', formatNumber(launch.tokenomics.totalSupply)],
-                  ['Price', `$${launch.tokenomics.pricePerToken}`],
-                  ['Raise Target', formatCurrency(launch.tokenomics.raiseTarget)],
-                  ['Liquidity', `${launch.tokenomics.liquidityPercent}%`],
-                  ['Community', `${launch.tokenomics.communityPercent}%`],
-                  ['Marketing', `${launch.tokenomics.marketingPercent}%`],
-                ].map(([l, v], i) => (
-                  <div key={i} className="glass rounded-xl p-4">
-                    <div className="text-gray-400 text-sm mb-1">{l}</div>
-                    <div className="text-white font-bold">{v}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Allocation Bar */}
-              <div className="mt-6">
-                <div className="text-gray-400 text-sm mb-3">Allocation</div>
-                <div className="flex h-6 rounded-xl overflow-hidden">
-                  <div className="bg-purple-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${launch.tokenomics.communityPercent}%` }}>{launch.tokenomics.communityPercent}%</div>
-                  <div className="bg-blue-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${launch.tokenomics.liquidityPercent}%` }}>{launch.tokenomics.liquidityPercent}%</div>
-                  <div className="bg-green-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${launch.tokenomics.teamPercent}%` }}>{launch.tokenomics.teamPercent}%</div>
-                  <div className="bg-yellow-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${launch.tokenomics.marketingPercent}%` }}>{launch.tokenomics.marketingPercent}%</div>
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+              <h2 className="text-xl font-bold text-white mb-4">Tokenomics</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-900/50 rounded-xl">
+                  <p className="text-slate-400 text-sm">Launch Price</p>
+                  <p className="text-xl font-bold text-white">${launch.launchPrice?.toFixed(4)}</p>
                 </div>
-                <div className="flex flex-wrap gap-4 mt-3 text-sm">
-                  <span className="text-purple-400">● Community</span>
-                  <span className="text-blue-400">● Liquidity</span>
-                  <span className="text-green-400">● Team</span>
-                  <span className="text-yellow-400">● Marketing</span>
+                <div className="p-4 bg-slate-900/50 rounded-xl">
+                  <p className="text-slate-400 text-sm">Total Supply</p>
+                  <p className="text-xl font-bold text-white">{launch.totalSupply?.toLocaleString() || '1B'}</p>
+                </div>
+                <div className="p-4 bg-slate-900/50 rounded-xl">
+                  <p className="text-slate-400 text-sm">Initial Liquidity</p>
+                  <p className="text-xl font-bold text-white">{launch.initialLiquidityPercent || 80}%</p>
+                </div>
+                <div className="p-4 bg-slate-900/50 rounded-xl">
+                  <p className="text-slate-400 text-sm">Hard Cap</p>
+                  <p className="text-xl font-bold text-white">${(launch.hardCap || 0).toLocaleString()} SOL</p>
+                </div>
+              </div>
+              
+              {/* Vesting Info */}
+              <div className="mt-4 p-4 bg-slate-900/50 rounded-xl">
+                <p className="text-slate-400 text-sm mb-2">Vesting Schedule</p>
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-white">TGE: {launch.initialUnlockPercent || 20}%</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="text-white">Vesting: {launch.vestingPeriod || 6} months</span>
                 </div>
               </div>
             </div>
 
-            {/* Timeline */}
-            <div className="crystal-card rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-white mb-6">Timeline</h2>
-              <div className="space-y-4">
-                {[
-                  ['Sale Start', formatDate(launch.timeline.startTime), 'bg-green-500/20 text-green-400'],
-                  ['Sale End', formatDate(launch.timeline.endTime), 'bg-red-500/20 text-red-400'],
-                  ['TGE (Token Generation)', formatDate(launch.timeline.tgeDate), 'bg-purple-500/20 text-purple-400'],
-                  ['Vesting Duration', `${launch.timeline.vestingDuration} months (cliff: ${launch.timeline.vestingCliff}mo)`, 'bg-blue-500/20 text-blue-400'],
-                ].map(([l, v, c], i) => (
-                  <div key={i} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
-                    <span className="text-gray-400">{l}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="text-white font-medium">{v}</span>
-                      <span className={`px-2 py-0.5 text-xs rounded-full ${c}`}>Upcoming</span>
-                    </div>
-                  </div>
-                ))}
+            {/* Project Links */}
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+              <h2 className="text-xl font-bold text-white mb-4">Project Links</h2>
+              <div className="flex flex-wrap gap-3">
+                {launch.websiteUrl && (
+                  <a href={launch.websiteUrl} target="_blank" rel="noopener noreferrer" 
+                     className="px-4 py-2 bg-slate-900/50 hover:bg-slate-900/70 rounded-lg text-slate-300 hover:text-white transition-colors flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                    Website
+                  </a>
+                )}
+                {launch.twitterUrl && (
+                  <a href={launch.twitterUrl} target="_blank" rel="noopener noreferrer"
+                     className="px-4 py-2 bg-slate-900/50 hover:bg-slate-900/70 rounded-lg text-slate-300 hover:text-white transition-colors flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    Twitter
+                  </a>
+                )}
+                {launch.telegramUrl && (
+                  <a href={launch.telegramUrl} target="_blank" rel="noopener noreferrer"
+                     className="px-4 py-2 bg-slate-900/50 hover:bg-slate-900/70 rounded-lg text-slate-300 hover:text-white transition-colors flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.28a.83.83 0 01-.402.392l-4.423 2.635a.83.83 0 01-.96-.16l2.47-3.59-2.024-3.046a.83.83 0 01.097-1.15l9.266-3.589a.83.83 0 01.946.243z" />
+                    </svg>
+                    Telegram
+                  </a>
+                )}
               </div>
             </div>
-
-            {/* Your Allocation */}
-            {launch.status !== 'upcoming' && (
-              <div className="crystal-card rounded-2xl p-6">
-                <h2 className="text-xl font-bold text-white mb-4">Your Allocation</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="glass rounded-xl p-4">
-                    <div className="text-gray-400 text-sm mb-1">Your Limit</div>
-                    <div className="text-white font-bold text-xl">5 SOL</div>
-                  </div>
-                  <div className="glass rounded-xl p-4">
-                    <div className="text-gray-400 text-sm mb-1">NFT Multiplier</div>
-                    <div className="gradient-text font-bold text-xl">1.5x</div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <div className="crystal-card rounded-2xl p-6 sticky top-24">
-              <h2 className="text-xl font-bold text-white mb-4">
-                {launch.status === 'upcoming' ? 'Upcoming Sale' : hasParticipated ? 'Already Participated' : 'Participate'}
-              </h2>
+            {/* Participation Card */}
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 sticky top-24">
+              <h2 className="text-xl font-bold text-white mb-4">Participation</h2>
               
-              {/* Success Message */}
-              {participationSuccess && (
-                <div className="mb-4 p-4 bg-green-500/20 border border-green-500/30 rounded-xl">
-                  <div className="text-green-400 font-medium text-sm">✅ Participation Successful!</div>
-                  <div className="text-gray-400 text-xs mt-1">Your tokens will be claimable after TGE</div>
+              {/* Progress */}
+              <div className="mb-6">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-slate-400">Raised</span>
+                  <span className="text-white font-medium">${(launch.totalRaised || 0).toLocaleString()} / ${(launch.hardCap || 0).toLocaleString()} SOL</span>
                 </div>
-              )}
-              
-              {hasParticipated ? (
-                <div className="p-4 bg-purple-500/20 border border-purple-500/30 rounded-xl text-center">
-                  <div className="text-purple-400 font-medium">You have already participated</div>
-                  <div className="text-gray-400 text-sm mt-1">Check your portfolio for details</div>
+                <div className="h-3 bg-slate-900 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-gray-400 text-sm mb-2">Amount (SOL)</label>
-                    <input
-                      type="number"
-                      placeholder="0.00"
-                      value={solAmount}
-                      onChange={(e) => setSolAmount(e.target.value)}
-                      disabled={launch.status === 'upcoming' || !wallet.connected}
-                      className="w-full glass text-white px-4 py-4 rounded-xl focus:outline-none focus:border-purple-500/50 transition-colors placeholder-gray-500 disabled:opacity-50"
-                    />
-                    <p className="text-gray-400 text-sm mt-2">
-                      ≈ <span className="text-white font-medium">{tokensReceived}</span> {launch.symbol}
-                    </p>
-                  </div>
+                <p className="text-sm text-slate-400 mt-2">{progress.toFixed(1)}% filled</p>
+              </div>
 
-                  <button 
-                    onClick={handleParticipate}
-                    disabled={isParticipating || launch.status === 'upcoming'}
-                    className="w-full btn-glossy py-4 rounded-xl font-bold text-white shadow-lg glow-purple disabled:opacity-50"
-                  >
-                    {isParticipating ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Processing...
-                      </span>
-                    ) : launch.status === 'upcoming' ? (
-                      'Coming Soon'
-                    ) : !wallet.connected ? (
-                      'Connect Wallet to Participate'
-                    ) : (
-                      'Participate Now'
-                    )}
-                  </button>
-
-                  <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-                    <span>🔒</span>
-                    <span>Secure transaction via Solana</span>
-                  </div>
+              {/* Your Participation */}
+              {participation && (
+                <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                  <p className="text-green-400 font-medium text-sm mb-1">✓ You participated</p>
+                  <p className="text-white font-bold">{participation.amount} SOL</p>
+                  <p className="text-slate-400 text-sm">{participation.tokenAmount?.toLocaleString()} {launch.symbol}</p>
+                  {participation.status === 'pending' && (
+                    <p className="text-slate-400 text-sm mt-2">Status: Pending claim</p>
+                  )}
+                  {participation.status === 'claimed' && (
+                    <p className="text-green-400 text-sm mt-2">✓ Tokens claimed</p>
+                  )}
                 </div>
               )}
 
-              {/* Quick Stats */}
-              <div className="mt-6 pt-6 border-t border-white/10">
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Your Balance</span>
-                    <span className="text-white font-medium">
-                      {wallet.connected ? `${wallet.balance?.toFixed(4) || 0} SOL` : '—'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Min Buy</span>
-                    <span className="text-white font-medium">0.1 SOL</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Max Buy</span>
-                    <span className="text-white font-medium">5 SOL</span>
-                  </div>
+              {/* Participate Button */}
+              {!isEnded && (
+                <button
+                  onClick={() => !connected ? connect() : setShowModal(true)}
+                  disabled={participating}
+                  className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {!connected 
+                    ? 'Connect Wallet' 
+                    : participation 
+                      ? 'Already Participated' 
+                      : 'Participate Now'
+                  }
+                </button>
+              )}
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-700/50">
+                <div>
+                  <p className="text-slate-400 text-sm">Participants</p>
+                  <p className="text-white font-bold">{launch.participants?.toLocaleString() || 0}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-sm">Min Allocation</p>
+                  <p className="text-white font-bold">{launch.minAllocation || 0.1} SOL</p>
                 </div>
               </div>
             </div>
-
-            {/* Eligible NFTs */}
-            {launch.status !== 'upcoming' && wallet.connected && (
-              <div className="crystal-card rounded-2xl p-6">
-                <h2 className="text-lg font-bold text-white mb-4">Your Eligible NFTs</h2>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 glass rounded-xl">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600/30 to-pink-600/30 flex items-center justify-center">🏆</div>
-                    <div>
-                      <div className="text-white font-medium text-sm">Seeker Pioneer</div>
-                      <div className="text-green-400 text-xs">1.5x Multiplier</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 glass rounded-xl">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-600/30 to-red-600/30 flex items-center justify-center">🟠</div>
-                    <div>
-                      <div className="text-white font-medium text-sm">Jupiter Aligned</div>
-                      <div className="text-green-400 text-xs">1.2x Multiplier</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
-      </div>
+      </main>
+
+      {/* Participation Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-white mb-4">Participate in {launch.name}</h3>
+            
+            <div className="mb-4">
+              <label className="text-slate-400 text-sm">Amount (SOL)</label>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="w-full mt-1 px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+              />
+              <div className="flex justify-between text-sm mt-2">
+                <span className="text-slate-400">You'll receive:</span>
+                <span className="text-white font-medium">
+                  {amount ? (parseFloat(amount) * (1 / (launch.launchPrice || 0.001))).toLocaleString() : 0} {launch.symbol}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-white font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleParticipate}
+                disabled={participating || !amount || parseFloat(amount) <= 0}
+                className="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl font-bold text-white transition-all disabled:opacity-50"
+              >
+                {participating ? 'Processing...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  );
+  )
 }

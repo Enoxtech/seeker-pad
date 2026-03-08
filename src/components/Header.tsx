@@ -55,6 +55,7 @@ function HeaderContent() {
     { href: '/portfolio', label: 'Portfolio', icon: '💼' },
     { href: '/nft', label: 'NFT', icon: '🎫' },
     { href: '/elite', label: 'Elite', icon: '⭐' },
+    { href: '/apply', label: 'Apply', icon: '🚀' },
     { href: '/profile', label: 'Profile', icon: '👤' },
   ];
 

@@ -10,6 +10,8 @@ import participationRouter from './routes/participation';
 import eligibilityRouter from './routes/eligibility';
 import nftRouter from './routes/nft';
 import walletRouter from './routes/wallet';
+import aiRouter from './routes/ai';
+import applicationsRouter from './routes/applications';
 
 dotenv.config();
 
@@ -33,6 +35,8 @@ app.use('/api/participation', participationRouter);
 app.use('/api/eligibility', eligibilityRouter);
 app.use('/api/nft', nftRouter);
 app.use('/api/wallet', walletRouter);
+app.use('/api/ai', aiRouter);
+app.use('/api/applications', applicationsRouter);
 
 // Error handling
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeSwitch/ThemeProvider";
+import AIChatWidget from "@/components/AIChatWidget";
 
 const WalletAdapterProvider = dynamic(
   () => import('@/components/wallet/WalletAdapterProvider').then(mod => mod.default),
@@ -29,6 +30,7 @@ export default function RootLayout({
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />
+              <AIChatWidget />
             </div>
           </WalletAdapterProvider>
         </ThemeProvider>
