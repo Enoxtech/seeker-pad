@@ -94,3 +94,12 @@ export const applicationsApi = {
   getStatus: (email: string) => fetchApi(`/applications/status/${email}`),
   getAll: (status?: string) => fetchApi(`/applications/admin/all${status ? `?status=${status}` : ''}`),
 };
+
+// Whales API
+export const whalesApi = {
+  getTokenActivity: (mintAddress: string) => fetchApi(`/whales/token/${mintAddress}`),
+  getWhalePortfolio: (walletAddress: string) => fetchApi(`/whales/portfolio/${walletAddress}`),
+  getLaunchAlerts: (launchId: string) => fetchApi(`/whales/launch/${launchId}/alerts`),
+  getTopWhales: (timeframe?: string) => fetchApi(`/whales/top-whales${timeframe ? `?timeframe=${timeframe}` : ''}`),
+  getPatterns: () => fetchApi('/whales/patterns'),
+};

@@ -12,6 +12,7 @@ import nftRouter from './routes/nft';
 import walletRouter from './routes/wallet';
 import aiRouter from './routes/ai';
 import applicationsRouter from './routes/applications';
+import whalesRouter from './routes/whales';
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ app.use('/api/nft', nftRouter);
 app.use('/api/wallet', walletRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/applications', applicationsRouter);
+app.use('/api/whales', whalesRouter);
 
 // Error handling
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

@@ -52,6 +52,7 @@ function HeaderContent() {
 
   const navItems = [
     { href: '/', label: 'Launches', icon: '🚀' },
+    { href: '/whales', label: 'Whales', icon: '🐋' },
     { href: '/portfolio', label: 'Portfolio', icon: '💼' },
     { href: '/nft', label: 'NFT', icon: '🎫' },
     { href: '/elite', label: 'Elite', icon: '⭐' },
