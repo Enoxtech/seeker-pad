@@ -1,6 +1,6 @@
 import * as anchor from '@project-serum/anchor';
-import { Connection, PublicKey, SystemProgram, TokenProgram } from '@solana/web3.js';
-import { Token } from '@solana/spl-token';
+import { Connection, PublicKey, SystemProgram } from '@solana/web3.js';
+import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 const LAUNCHPAD_PROGRAM_ID = new PublicKey('SeekPad1111111111111111111111111111111');
 
@@ -12,7 +12,7 @@ export const PARTICIPATION_SIZE = 128;
 export const ELIGIBILITY_SIZE = 66;
 
 // Find launch PDA
-export function findLaunchAddress(mint: PublicKey): [PublicKey, number] {
+export async function findLaunchAddress(mint: PublicKey): Promise<[PublicKey, number]> {
   return PublicKey.findProgramAddress(
     [Buffer.from('launch'), mint.toBuffer()],
     LAUNCHPAD_PROGRAM_ID
@@ -20,10 +20,10 @@ export function findLaunchAddress(mint: PublicKey): [PublicKey, number] {
 }
 
 // Find participation PDA
-export function findParticipationAddress(
+export async function findParticipationAddress(
   user: PublicKey,
   launch: PublicKey
-): [PublicKey, number] {
+): Promise<[PublicKey, number]> {
   return PublicKey.findProgramAddress(
     [Buffer.from('participation'), user.toBuffer(), launch.toBuffer()],
     LAUNCHPAD_PROGRAM_ID
@@ -31,10 +31,10 @@ export function findParticipationAddress(
 }
 
 // Find eligibility PDA
-export function findEligibilityAddress(
+export async function findEligibilityAddress(
   user: PublicKey,
   category: number
-): [PublicKey, number] {
+): Promise<[PublicKey, number]> {
   return PublicKey.findProgramAddress(
     [Buffer.from('eligibility'), user.toBuffer(), Buffer.from([category])],
     LAUNCHPAD_PROGRAM_ID
@@ -60,11 +60,11 @@ export async function initializeLaunch(
   isElite: boolean
 ) {
   const [launch] = await findLaunchAddress(mint);
-  const [vault] = PublicKey.findProgramAddress(
+  const [vault] = await PublicKey.findProgramAddress(
     [Buffer.from('vault'), mint.toBuffer()],
     LAUNCHPAD_PROGRAM_ID
   );
-  const [usdcVault] = PublicKey.findProgramAddress(
+  const [usdcVault] = await PublicKey.findProgramAddress(
     [Buffer.from('usdc_vault'), mint.toBuffer()],
     LAUNCHPAD_PROGRAM_ID
   );
@@ -106,7 +106,7 @@ export async function participate(
   const launchAccount = await program.account.launch.fetch(launch);
   
   // Get vault
-  const [vault] = PublicKey.findProgramAddress(
+  const [vault] = await PublicKey.findProgramAddress(
     [Buffer.from('launch'), launchAccount.mint.toBuffer()],
     LAUNCHPAD_PROGRAM_ID
   );
@@ -146,7 +146,7 @@ export async function claimTokens(
       participation,
       launch,
       userTokenAccount,
-      tokenProgram: TokenProgram.programId,
+      tokenProgram: TOKEN_PROGRAM_ID,
     },
   });
 
