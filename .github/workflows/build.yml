@@ -15,16 +15,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@master
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
         with:
-          node-version: '20'
+          workspaces: ./smart-contract -> target
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install Anchor CLI
-        run: npm install -g @project-serum/anchor
+      - name: Build Anchor
+        uses: lightprotocol/anchor-action@master
+        with:
+          anchor_version: v0.26.0
 
       - name: Build smart contract
         working-directory: ./smart-contract
