@@ -15,7 +15,7 @@ interface Props {
 export default function LaunchDetailPage({ params }: Props) {
   const { id } = use(params)
   const router = useRouter()
-  const { connected, address, connect } = useWallet()
+  const { connected, publicKey, connect } = useWallet()
   
   const [launch, setLaunch] = useState<Launch | null>(null)
   const [participation, setParticipation] = useState<Participation | null>(null)
@@ -31,8 +31,8 @@ export default function LaunchDetailPage({ params }: Props) {
         const launchData = await getLaunchById(id)
         setLaunch(launchData || null)
         
-        if (address) {
-          const part = await getUserParticipation(address, id)
+        if (publicKey) {
+          const part = await getUserParticipation(publicKey, id)
           setParticipation(part)
         }
       } catch (error) {
@@ -42,7 +42,7 @@ export default function LaunchDetailPage({ params }: Props) {
       }
     }
     loadData()
-  }, [id, address])
+  }, [id, publicKey])
 
   useEffect(() => {
     if (!launch?.startTime || !launch?.endTime) return
@@ -96,7 +96,7 @@ export default function LaunchDetailPage({ params }: Props) {
     try {
       const part = await createParticipation({
         launchId: id,
-        userAddress: address!,
+        userAddress: publicKey!,
         amountSol: parseFloat(amount),
         txSignature: 'mock_sig_' + Date.now(),
       })
