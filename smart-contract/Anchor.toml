@@ -2,6 +2,7 @@
 cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
+# SeekerPad Launchpad Program
 [programs]
 seekerpad = "SeekPad1111111111111111111111111111111"
 
