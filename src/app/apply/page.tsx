@@ -152,21 +152,21 @@ export default function ApplyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 py-12">
-      <div className="max-w-3xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 py-12 pb-24">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">Launch Your Project</h1>
-          <p className="text-slate-400 text-lg">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">Launch Your Project</h1>
+          <p className="text-slate-400 text-base sm:text-lg">
             Apply to launch on SeekerPad - the premier Solana Mobile launchpad
           </p>
         </div>
 
         {/* Progress */}
-        <div className="flex items-center justify-center gap-4 mb-12">
+        <div className="flex items-center justify-center gap-2 sm:gap-4 mb-10 overflow-x-auto px-2">
           {[1, 2, 3, 4].map((s) => (
-            <div key={s} className="flex items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+            <div key={s} className="flex items-center flex-shrink-0">
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm ${
                 step >= s 
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white' 
                   : 'bg-slate-700 text-slate-400'
@@ -174,14 +174,14 @@ export default function ApplyPage() {
                 {s}
               </div>
               {s < 4 && (
-                <div className={`w-16 h-1 mx-2 ${step > s ? 'bg-gradient-to-r from-cyan-500 to-blue-600' : 'bg-slate-700'}`} />
+                <div className={`w-8 sm:w-16 h-1 mx-1 sm:mx-2 ${step > s ? 'bg-gradient-to-r from-cyan-500 to-blue-600' : 'bg-slate-700'}`} />
               )}
             </div>
           ))}
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8">
+        <form onSubmit={handleSubmit} className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 sm:p-8">
           {error && (
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400">
               {error}
@@ -193,8 +193,8 @@ export default function ApplyPage() {
             <div className="space-y-6">
               <h2 className="text-xl font-bold text-white mb-4">Project Information</h2>
               
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
+              <div className="grid sm:grid-cols-2 gap-5">
+                <div className="sm:col-span-2">
                   <label className="block text-slate-400 text-sm mb-2">Project Name *</label>
                   <input
                     type="text"
@@ -203,7 +203,7 @@ export default function ApplyPage() {
                     onChange={handleChange}
                     placeholder="SeekerPad"
                     required
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                   />
                 </div>
                 <div>
@@ -215,7 +215,7 @@ export default function ApplyPage() {
                     onChange={handleChange}
                     placeholder="SEEK"
                     required
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                   />
                 </div>
               </div>
@@ -229,34 +229,35 @@ export default function ApplyPage() {
                   placeholder="Describe your project..."
                   required
                   rows={4}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 resize-none"
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 resize-none transition-colors"
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-400 text-sm mb-2">Contact Email *</label>
-                <input
-                  type="email"
-                  name="contactEmail"
-                  value={formData.contactEmail}
-                  onChange={handleChange}
-                  placeholder="team@yourproject.com"
-                  required
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-400 text-sm mb-2">Launch Type</label>
-                <select
-                  name="launchType"
-                  value={formData.launchType}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500"
-                >
-                  <option value="standard">Standard Launch</option>
-                  <option value="elite">Elite Launch (NFT holders only)</option>
-                </select>
+              <div className="grid sm:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-slate-400 text-sm mb-2">Contact Email *</label>
+                  <input
+                    type="email"
+                    name="contactEmail"
+                    value={formData.contactEmail}
+                    onChange={handleChange}
+                    placeholder="team@yourproject.com"
+                    required
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 text-sm mb-2">Launch Type</label>
+                  <select
+                    name="launchType"
+                    value={formData.launchType}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                  >
+                    <option value="standard">Standard Launch</option>
+                    <option value="elite">Elite Launch (NFT holders only)</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
@@ -274,7 +275,7 @@ export default function ApplyPage() {
                   value={formData.website}
                   onChange={handleChange}
                   placeholder="https://yourproject.com"
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                 />
               </div>
 
@@ -286,7 +287,7 @@ export default function ApplyPage() {
                   value={formData.twitter}
                   onChange={handleChange}
                   placeholder="https://twitter.com/yourproject"
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                 />
               </div>
 
@@ -298,7 +299,7 @@ export default function ApplyPage() {
                   value={formData.telegram}
                   onChange={handleChange}
                   placeholder="https://t.me/yourproject"
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                 />
               </div>
 
@@ -310,7 +311,7 @@ export default function ApplyPage() {
                   value={formData.whitepaperUrl}
                   onChange={handleChange}
                   placeholder="https://docs.yourproject.com/whitepaper"
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                 />
               </div>
             </div>
@@ -321,7 +322,7 @@ export default function ApplyPage() {
             <div className="space-y-6">
               <h2 className="text-xl font-bold text-white mb-4">Tokenomics</h2>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-slate-400 text-sm mb-2">Total Supply *</label>
                   <input
@@ -331,7 +332,7 @@ export default function ApplyPage() {
                     onChange={handleChange}
                     placeholder="1000000000"
                     required
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                   />
                 </div>
                 <div>
@@ -344,7 +345,7 @@ export default function ApplyPage() {
                     placeholder="0.001"
                     step="0.0001"
                     required
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                   />
                 </div>
                 <div>
@@ -356,7 +357,7 @@ export default function ApplyPage() {
                     onChange={handleChange}
                     placeholder="100000"
                     required
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                   />
                 </div>
                 <div>
@@ -367,7 +368,7 @@ export default function ApplyPage() {
                     value={formData.initialLiquidity}
                     onChange={handleChange}
                     placeholder="80"
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                   />
                 </div>
                 <div>
@@ -378,7 +379,7 @@ export default function ApplyPage() {
                     value={formData.teamAllocation}
                     onChange={handleChange}
                     placeholder="15"
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                   />
                 </div>
                 <div>
@@ -389,7 +390,7 @@ export default function ApplyPage() {
                     value={formData.vestingMonths}
                     onChange={handleChange}
                     placeholder="6"
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                   />
                 </div>
               </div>
@@ -399,12 +400,12 @@ export default function ApplyPage() {
           {/* Step 4: Team */}
           {step === 4 && (
             <div className="space-y-6">
-              <h2 className="text-xl font-bold text-white mb-4">Team Information</h2>
+              <h2 className="text-xl font-bold text-white mb-2">Team Information</h2>
               <p className="text-slate-400 text-sm mb-6">
                 Help us verify your team. This information is kept confidential.
               </p>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-slate-400 text-sm mb-2">Team Member Name</label>
                   <input
@@ -413,7 +414,7 @@ export default function ApplyPage() {
                     value={formData.teamName}
                     onChange={handleChange}
                     placeholder="John Doe"
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                   />
                 </div>
                 <div>
@@ -424,7 +425,7 @@ export default function ApplyPage() {
                     value={formData.teamRole}
                     onChange={handleChange}
                     placeholder="CEO / Developer"
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                   />
                 </div>
               </div>
@@ -437,19 +438,19 @@ export default function ApplyPage() {
                   value={formData.teamLinkedIn}
                   onChange={handleChange}
                   placeholder="https://linkedin.com/in/johndoe"
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
                 />
               </div>
             </div>
           )}
 
           {/* Navigation */}
-          <div className="flex justify-between mt-8 pt-6 border-t border-slate-700/50">
+          <div className="flex flex-col sm:flex-row justify-between gap-4 mt-8 pt-6 border-t border-slate-700/50">
             {step > 1 ? (
               <button
                 type="button"
                 onClick={() => setStep(step - 1)}
-                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-white font-medium transition-colors"
+                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-white font-medium transition-colors text-center"
               >
                 Back
               </button>
@@ -462,7 +463,7 @@ export default function ApplyPage() {
                 type="button"
                 onClick={() => setStep(step + 1)}
                 disabled={!canProceed()}
-                className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed text-center"
               >
                 Continue
               </button>
@@ -470,7 +471,7 @@ export default function ApplyPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl font-bold text-white transition-all disabled:opacity-50"
+                className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl font-bold text-white transition-all disabled:opacity-50 text-center"
               >
                 {submitting ? 'Submitting...' : 'Submit Application'}
               </button>

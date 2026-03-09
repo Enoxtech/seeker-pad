@@ -44,7 +44,7 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -52,18 +52,18 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-md mx-4 crystal-card rounded-2xl p-6 animate-float">
+      <div className="relative w-full max-w-md mx-4 crystal-card rounded-2xl p-6 animate-float overflow-hidden">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-white transition-colors p-2"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        <h2 className="text-2xl font-bold text-white mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-white mb-5 sm:mb-6 pr-8">
           {wallet.connected ? 'Wallet Connected' : 'Connect Wallet'}
         </h2>
 
@@ -99,14 +99,14 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
                 key={w.name}
                 onClick={() => handleWalletSelect(w.name)}
                 disabled={isConnecting}
-                className={`w-full flex items-center gap-4 p-4 rounded-xl border border-white/10 hover:border-white/20 transition-all ${
+                className={`w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-white/10 hover:border-white/20 transition-all ${
                   selectedWallet === w.name ? 'bg-purple-500/20 border-purple-500/50' : 'glass'
                 }`}
               >
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${w.color} flex items-center justify-center text-2xl`}>
+                <div className={`w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-gradient-to-br ${w.color} flex items-center justify-center text-xl`}>
                   {w.icon}
                 </div>
-                <span className="text-white font-medium">{w.name}</span>
+                <span className="text-white font-medium text-sm sm:text-base">{w.name}</span>
                 {isConnecting && selectedWallet === w.name && (
                   <svg className="animate-spin h-5 w-5 ml-auto text-purple-400" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
