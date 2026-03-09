@@ -74,8 +74,22 @@ export const participationApi = {
 };
 
 // Eligibility API
+interface EligibilityCategoryStatus {
+  category: string;
+  isEligible: boolean;
+  balance?: number;
+  threshold?: number;
+}
+
+interface EligibilityStatus {
+  isEligible: boolean;
+  categories: EligibilityCategoryStatus[];
+  hasNFT: boolean;
+  nftCount: number;
+}
+
 export const eligibilityApi = {
-  check: (address: string) => fetchApi(`/eligibility/check/${address}`),
+  check: (address: string) => fetchApi<EligibilityStatus>(`/eligibility/check/${address}`),
   verify: (address: string, category: string) => fetchApi('/eligibility/verify', {
     method: 'POST',
     body: JSON.stringify({ address, category }),
@@ -84,10 +98,19 @@ export const eligibilityApi = {
 };
 
 // NFT API
+interface UserNFT {
+  id: string;
+  mintAddress: string;
+  ownerAddress: string;
+  category: string;
+  imageUrl?: string;
+  mintDate?: string;
+}
+
 export const nftApi = {
-  getUserNFTs: (address: string) => fetchApi(`/nft/user/${address}`),
+  getUserNFTs: (address: string) => fetchApi<UserNFT[]>(`/nft/user/${address}`),
   getCategories: () => fetchApi('/nft/categories'),
-  checkEligibility: (address: string) => fetchApi(`/nft/eligibility/${address}`),
+  checkEligibility: (address: string) => fetchApi('/nft/eligibility/${address}`),
 };
 
 // Wallet API
