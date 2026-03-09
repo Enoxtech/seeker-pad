@@ -1,5 +1,6 @@
 // API Client - Mock implementation for frontend
 // In production, these would make actual HTTP calls to the backend
+import type { EligibilityStatus, Launch, Participation, SeekerPadNFT } from '@/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
@@ -74,20 +75,6 @@ export const participationApi = {
 };
 
 // Eligibility API
-interface EligibilityCategoryStatus {
-  category: string;
-  isEligible: boolean;
-  balance?: number;
-  threshold?: number;
-}
-
-interface EligibilityStatus {
-  isEligible: boolean;
-  categories: EligibilityCategoryStatus[];
-  hasNFT: boolean;
-  nftCount: number;
-}
-
 export const eligibilityApi = {
   check: (address: string) => fetchApi<EligibilityStatus>(`/eligibility/check/${address}`),
   verify: (address: string, category: string) => fetchApi('/eligibility/verify', {
@@ -98,19 +85,10 @@ export const eligibilityApi = {
 };
 
 // NFT API
-interface UserNFT {
-  id: string;
-  mintAddress: string;
-  ownerAddress: string;
-  category: string;
-  imageUrl?: string;
-  mintDate?: string;
-}
-
 export const nftApi = {
-  getUserNFTs: (address: string) => fetchApi<UserNFT[]>(`/nft/user/${address}`),
+  getUserNFTs: (address: string) => fetchApi<SeekerPadNFT[]>(`/nft/user/${address}`),
   getCategories: () => fetchApi('/nft/categories'),
-  checkEligibility: (address: string) => fetchApi('/nft/eligibility/${address}`),
+  checkEligibility: (address: string) => fetchApi(`/nft/eligibility/${address}`),
 };
 
 // Wallet API
