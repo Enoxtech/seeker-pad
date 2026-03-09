@@ -1,10 +1,10 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::program_option::COption;
-use anchor_lang::solana_program::program_pack::Pack;
-use anchor_lang::spl_token::Token;
+
+declare_id!("SeekPad1111111111111111111111111111111");
 
 // Launch state
 #[account]
+#[derive(Default)]
 pub struct Launch {
     pub authority: Pubkey,
     pub mint: Pubkey,
@@ -18,13 +18,14 @@ pub struct Launch {
     pub start_time: i64,
     pub end_time: i64,
     pub tge_time: i64,
-    pub status: u8, // 0: upcoming, 1: live, 2: ended
-    pub launch_type: u8, // 0: standard, 1: elite
+    pub status: u8,
+    pub launch_type: u8,
     pub bump: u8,
 }
 
 // User participation
 #[account]
+#[derive(Default)]
 pub struct Participation {
     pub user: Pubkey,
     pub launch: Pubkey,
@@ -38,9 +39,10 @@ pub struct Participation {
 
 // NFT eligibility
 #[account]
+#[derive(Default)]
 pub struct Eligibility {
     pub user: Pubkey,
-    pub category: u8, // 0: saga, 1: seeker, 2: jupiter, 3: bonk, 4: meteora
+    pub category: u8,
     pub is_verified: bool,
     pub bump: u8,
 }
@@ -51,7 +53,7 @@ pub struct InitializeLaunch<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8 + std::mem::size_of::<Launch>(),
+        space = 8 + 208,
         seeds = [b"launch", mint.key().as_ref()],
         bump
     )]
@@ -84,7 +86,7 @@ pub struct Participate<'info> {
     #[account(
         init,
         payer = user,
-        space = 8 + std::mem::size_of::<Participation>(),
+        space = 8 + 128,
         seeds = [b"participation", user.key().as_ref(), launch.key().as_ref()],
         bump
     )]
@@ -123,8 +125,8 @@ pub struct VerifyEligibility<'info> {
     #[account(
         init,
         payer = user,
-        space = 8 + std::mem::size_of::<Eligibility>(),
-        seeds = [b"eligibility", user.key().as_ref(), &[category][..]],
+        space = 8 + 66,
+        seeds = [b"eligibility", user.key().as_ref()],
         bump
     )]
     pub eligibility: Account<'info, Eligibility>,
@@ -159,7 +161,7 @@ pub fn initialize_launch(
     launch.start_time = start_time;
     launch.end_time = end_time;
     launch.tge_time = tge_time;
-    launch.status = 0; // upcoming
+    launch.status = 0;
     launch.launch_type = launch_type;
     launch.bump = ctx.bumps.launch;
 
@@ -172,16 +174,12 @@ pub fn participate(ctx: Context<Participate>, amount: u64) -> Result<()> {
     let launch = &mut ctx.accounts.launch;
     let participation = &mut ctx.accounts.participation;
 
-    // Check launch is live
     require!(launch.status == 1, ErrorCode::LaunchNotLive);
-
-    // Check amount within allocation
     require!(
         amount >= launch.min_allocation && amount <= launch.max_allocation,
         ErrorCode::InvalidAllocation
     );
 
-    // Transfer SOL to vault
     let cpi_context = CpiContext::new(
         ctx.accounts.system_program.to_account_info(),
         anchor_lang::system_program::Transfer {
@@ -191,10 +189,8 @@ pub fn participate(ctx: Context<Participate>, amount: u64) -> Result<()> {
     );
     anchor_lang::system_program::transfer(cpi_context, amount)?;
 
-    // Calculate tokens received
     let tokens_received = (amount * 1_000_000_000) / launch.price_per_token;
     
-    // Record participation
     participation.user = ctx.accounts.user.key();
     participation.launch = launch.key();
     participation.amount = amount;
@@ -204,28 +200,21 @@ pub fn participate(ctx: Context<Participate>, amount: u64) -> Result<()> {
     participation.claimed_amount = 0;
     participation.bump = ctx.bumps.participation;
 
-    // Update launch
     launch.total_raised += amount;
 
-    msg!("User {} participated with {} SOL, received {} tokens", 
-        ctx.accounts.user.key(), amount, tokens_received);
-
+    msg!("User {} participated with {} SOL", ctx.accounts.user.key(), amount);
     Ok(())
 }
 
-// Claim tokens after TGE
+// Claim tokens
 pub fn claim(ctx: Context<Claim>) -> Result<()> {
     let participation = &mut ctx.accounts.participation;
     let launch = &mut ctx.accounts.launch;
 
-    // Check TGE has passed
     let clock = Clock::get()?;
     require!(clock.unix_timestamp >= launch.tge_time, ErrorCode::TGENotReached);
-
-    // Check not already claimed
     require!(!participation.claimed, ErrorCode::AlreadyClaimed);
 
-    // Transfer tokens to user
     let seeds = &[&[b"launch", &[launch.bump]][..]];
     let signer = &[&seeds[..]];
 
@@ -239,17 +228,14 @@ pub fn claim(ctx: Context<Claim>) -> Result<()> {
         signer,
     );
     
-    // Transfer the claimable amount
     let tokens_to_claim = participation.claimable_amount;
     anchor_lang::spl_token::transfer(cpi_context, tokens_to_claim)?;
 
-    // Update participation
     participation.claimed = true;
     participation.claimed_amount = tokens_to_claim;
     participation.claimable_amount = 0;
 
     msg!("User claimed {} tokens", tokens_to_claim);
-
     Ok(())
 }
 

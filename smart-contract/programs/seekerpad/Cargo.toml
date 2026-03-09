@@ -11,6 +11,9 @@ mainnet = ["anchor-lang/mainnet"]
 devnet = ["anchor-lang/devnet"]
 
 [dependencies]
-anchor-lang = { version = "0.26.0", features = ["init-if-needed"] }
+anchor-lang = "0.26.0"
 anchor-spl = "0.26.0"
 solana-program = "1.14.6"
+
+[lib]
+crate-type = ["cdylib", "lib"]
