@@ -3,8 +3,6 @@ name: Build Smart Contract
 on:
   push:
     branches: [main]
-    paths:
-      - 'smart-contract/**'
   workflow_dispatch:
 
 jobs:
