@@ -85,7 +85,7 @@ export default function LaunchDetailPage({ params }: Props) {
   }, [launch?.startTime, launch?.endTime])
 
   const handleParticipate = async () => {
-    if (!connected) {
+    if (!connected || !publicKey) {
       await connect()
       return
     }
@@ -96,7 +96,7 @@ export default function LaunchDetailPage({ params }: Props) {
     try {
       const part = await createParticipation({
         launchId: id,
-        userAddress: publicKey.toBase58()!,
+        userAddress: publicKey.toBase58(),
         amountSol: parseFloat(amount),
         txSignature: 'mock_sig_' + Date.now(),
       })
