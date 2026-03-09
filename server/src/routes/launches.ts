@@ -80,7 +80,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
 
     res.json(result.rows[0]);
   } catch (error) {
-    console.status(500).json({ error: 'Failed to update launch status' });
+    res.status(500).json({ error: 'Failed to update launch status' });
   }
 });
 

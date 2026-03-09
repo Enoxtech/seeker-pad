@@ -14,49 +14,65 @@ import aiRouter from './routes/ai';
 import applicationsRouter from './routes/applications';
 import whalesRouter from './routes/whales';
 
+// Database
+import { initDatabase } from './config/database';
+
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-// Middleware
-app.use(helmet());
-app.use(cors());
-app.use(morgan('dev'));
-app.use(express.json());
+// Initialize database and start server
+async function start() {
+  try {
+    await initDatabase();
+    console.log('📦 Database initialized');
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+  }
+  
+  // Middleware
+  app.use(helmet());
+  app.use(cors());
+  app.use(morgan('dev'));
+  app.use(express.json());
 
-// Health check
-app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// API Routes
-app.use('/api/launches', launchesRouter);
-app.use('/api/participation', participationRouter);
-app.use('/api/eligibility', eligibilityRouter);
-app.use('/api/nft', nftRouter);
-app.use('/api/wallet', walletRouter);
-app.use('/api/ai', aiRouter);
-app.use('/api/applications', applicationsRouter);
-app.use('/api/whales', whalesRouter);
-
-// Error handling
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('Error:', err);
-  res.status(500).json({ 
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  // Health check
+  app.get('/health', (req: Request, res: Response) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
-});
 
-// 404 handler
-app.use((req: Request, res: Response) => {
-  res.status(404).json({ error: 'Not Found' });
-});
+  // API Routes
+  app.use('/api/launches', launchesRouter);
+  app.use('/api/participation', participationRouter);
+  app.use('/api/eligibility', eligibilityRouter);
+  app.use('/api/nft', nftRouter);
+  app.use('/api/wallet', walletRouter);
+  app.use('/api/ai', aiRouter);
+  app.use('/api/applications', applicationsRouter);
+  app.use('/api/whales', whalesRouter);
 
-app.listen(PORT, () => {
-  console.log(`🚀 SeekerPad API running on port ${PORT}`);
-  console.log(`   Network: ${process.env.SOLANA_NETWORK || 'devnet'}`);
-});
+  // Error handling
+  app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    console.error('Error:', err);
+    res.status(500).json({ 
+      error: 'Internal Server Error',
+      message: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  });
+
+  // 404 handler
+  app.use((req: Request, res: Response) => {
+    res.status(404).json({ error: 'Not Found' });
+  });
+
+  app.listen(PORT, () => {
+    console.log(`🚀 SeekerPad API running on port ${PORT}`);
+    console.log(`   Network: ${process.env.SOLANA_NETWORK || 'devnet'}`);
+    console.log(`   Database: ${process.env.USE_SQLITE === 'true' ? 'SQLite' : 'PostgreSQL'}`);
+  });
+}
+
+start();
 
 export default app;
