@@ -32,7 +32,7 @@ export default function LaunchDetailPage({ params }: Props) {
         setLaunch(launchData || null)
         
         if (publicKey) {
-          const part = await getUserParticipation(publicKey, id)
+          const part = await getUserParticipation(publicKey.toBase58(), id)
           setParticipation(part)
         }
       } catch (error) {
@@ -96,7 +96,7 @@ export default function LaunchDetailPage({ params }: Props) {
     try {
       const part = await createParticipation({
         launchId: id,
-        userAddress: publicKey!,
+        userAddress: publicKey.toBase58()!,
         amountSol: parseFloat(amount),
         txSignature: 'mock_sig_' + Date.now(),
       })
