@@ -1,0 +1,16 @@
+[package]
+name = "seekerpad"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = []
+cpi = ["anchor-lang/cpi"]
+no-entrypoint = ["anchor-lang/no-entrypoint"]
+mainnet = ["anchor-lang/mainnet"]
+devnet = ["anchor-lang/devnet"]
+
+[dependencies]
+anchor-lang = { version = "0.26.0", features = ["init-if-needed"] }
+anchor-spl = "0.26.0"
+solana-program = "1.14.6"

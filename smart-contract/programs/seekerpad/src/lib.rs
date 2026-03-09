@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_option::COption;
 use anchor_lang::solana_program::program_pack::Pack;
+use anchor_lang::spl_token::Token;
 
 // Launch state
 #[account]
@@ -42,6 +43,95 @@ pub struct Eligibility {
     pub category: u8, // 0: saga, 1: seeker, 2: jupiter, 3: bonk, 4: meteora
     pub is_verified: bool,
     pub bump: u8,
+}
+
+// Account contexts
+#[derive(Accounts)]
+pub struct InitializeLaunch<'info> {
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + std::mem::size_of::<Launch>(),
+        seeds = [b"launch", mint.key().as_ref()],
+        bump
+    )]
+    pub launch: Account<'info, Launch>,
+    pub mint: AccountInfo<'info>,
+    #[account(
+        init,
+        payer = authority,
+        seeds = [b"vault", mint.key().as_ref()],
+        bump
+    )]
+    pub vault: SystemAccount<'info>,
+    #[account(
+        init,
+        payer = authority,
+        seeds = [b"usdc_vault", mint.key().as_ref()],
+        bump
+    )]
+    pub usdc_vault: SystemAccount<'info>,
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+#[derive(Accounts)]
+pub struct Participate<'info> {
+    #[account(mut)]
+    pub launch: Account<'info, Launch>,
+    #[account(
+        init,
+        payer = user,
+        space = 8 + std::mem::size_of::<Participation>(),
+        seeds = [b"participation", user.key().as_ref(), launch.key().as_ref()],
+        bump
+    )]
+    pub participation: Account<'info, Participation>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+    #[account(mut)]
+    pub vault: SystemAccount<'info>,
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+#[derive(Accounts)]
+pub struct Claim<'info> {
+    #[account(mut)]
+    pub participation: Account<'info, Participation>,
+    #[account(mut)]
+    pub launch: Account<'info, Launch>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+    #[account(mut)]
+    pub user_token_account: AccountInfo<'info>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateStatus<'info> {
+    #[account(mut)]
+    pub launch: Account<'info, Launch>,
+    pub authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct VerifyEligibility<'info> {
+    #[account(
+        init,
+        payer = user,
+        space = 8 + std::mem::size_of::<Eligibility>(),
+        seeds = [b"eligibility", user.key().as_ref(), &[category][..]],
+        bump
+    )]
+    pub eligibility: Account<'info, Eligibility>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 // Initialize a new launch
