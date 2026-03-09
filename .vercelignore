@@ -1,0 +1,5 @@
+server/
+smart-contract/
+.env
+.env.local
+*.md
