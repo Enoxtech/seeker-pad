@@ -15,12 +15,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install Anchor
-        run: |
-          cargo install --git https://github.com/coral-xyz/anchor --tag v0.26.0 anchor-cli --locked
+      - name: Install Anchor CLI
+        run: npm install -g @project-serum/anchor
 
       - name: Build smart contract
         working-directory: ./smart-contract
