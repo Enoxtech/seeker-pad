@@ -21,9 +21,24 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 }
 
 // Launch API
+interface ApiLaunch {
+  id: string;
+  name: string;
+  symbol: string;
+  description?: string;
+  type?: string;
+  status?: string;
+  totalSupply?: string;
+  launchPrice?: string;
+  raiseTarget?: string;
+  totalRaised?: string;
+  startTime?: string;
+  endTime?: string;
+}
+
 export const launchesApi = {
-  getAll: () => fetchApi('/launches'),
-  getById: (id: string) => fetchApi(`/launches/${id}`),
+  getAll: () => fetchApi<ApiLaunch[]>('/launches'),
+  getById: (id: string) => fetchApi<ApiLaunch>(`/launches/${id}`),
   create: (data: any) => fetchApi('/launches', {
     method: 'POST',
     body: JSON.stringify(data),
