@@ -87,7 +87,7 @@ export default function Profile() {
               <div className="flex flex-wrap gap-3">
                 <div className="crystal-card px-4 py-2">
                   <div className="text-xs text-gray-400">Tier</div>
-                  <div className="text-white font-semibold">{eligibility?.categories?.find(c => c.isEligible)?.category || 'Explorer'}</div>
+                  <div className="text-white font-semibold">{eligibility?.categories?.find((c: { isEligible: boolean }) => c.isEligible)?.category || 'Explorer'}</div>
                 </div>
                 <div className="crystal-card px-4 py-2">
                   <div className="text-xs text-gray-400">NFTs</div>
