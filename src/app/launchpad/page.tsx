@@ -37,7 +37,7 @@ export default function Launchpad() {
   return (
     <div className="min-h-screen bg-gray-950 pt-14 md:pt-16">
       {/* Header */}
-      <div className="bg-gradient-to-b from-purple-900/20 to-transparent py-8 md:py-12 px-3 md:px-4">
+      <div className="bg-gradient-to-b from-purple-900/20 to-transparent py-8 md:py-12 px-3 md:px-4 pt-20">
         <div className="max-w-7xl mx-auto">
           <Badge variant="elite" className="mb-4">🚀 Launchpad</Badge>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
