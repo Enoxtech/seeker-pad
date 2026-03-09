@@ -1,0 +1,34 @@
+name: Build Smart Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'smart-contract/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Anchor
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v0.26.0 anchor-cli --locked
+
+      - name: Build smart contract
+        working-directory: ./smart-contract
+        run: anchor build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: anchor-build
+          path: smart-contract/target/deploy/*.so
+          retention-days: 7
