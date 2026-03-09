@@ -113,7 +113,7 @@ export default function WhalesPage() {
 
       setTopWhales([
         { rank: 1, wallet: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU', totalParticipations: 45, totalValue: 1250, averageROI: 3.2, recentActivity: 'Participated in Bonkify' },
-        { rank: 2, wallet: '7r1WNiyqp3E4j2dHwJv8qBz3DXYUgZ2G7S8i4qD3M', totalParticipations: 38,980, averageROI: 2. totalValue: 8, recentActivity: 'Participated in SeekerX' },
+        { rank: 2, wallet: '7r1WNiyqp3E4j2dHwJv8qBz3DXYUgZ2G7S8i4qD3M', totalParticipations: 38, totalValue: 980, averageROI: 2.8, recentActivity: 'Participated in SeekerX' },
         { rank: 3, wallet: '9ZqD8kV4jN3pQ2wL6mK8fR1tY0bH5vC', totalParticipations: 32, totalValue: 850, averageROI: 4.1, recentActivity: 'Claimed SVW tokens' },
         { rank: 4, wallet: '2pL8qK4r9s3Y7mN9vX1cB5hJ8kF4pW', totalParticipations: 28, totalValue: 720, averageROI: 2.5, recentActivity: 'Participated in SeedVault' },
         { rank: 5, wallet: '5mN3pQ7v1w9Z2xL8kR4tY6cH7jB3pN', totalParticipations: 25, totalValue: 650, averageROI: 3.8, recentActivity: 'Participated in Bonkify' }
