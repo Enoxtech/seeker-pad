@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, SystemProgram, LAMPORTS_PER_SOL, Transaction } from '@solana/web3.js';
 
 interface ParticipateButtonProps {
   launchId: string;
@@ -82,12 +82,13 @@ export default function ParticipateButton({
       // In production, this would interact with the launchpad smart contract
       const treasuryAddress = 'GDbhZgN5wTJPJ2JHM5bZG9HPocM9q4vK2v2f5q6x7qw'; // Demo treasury
       
-      const transaction = SystemProgram.transfer({
+      const instruction = SystemProgram.transfer({
         fromPubkey: publicKey,
         toPubkey: new (await import('@solana/web3.js')).PublicKey(treasuryAddress),
         lamports: Math.floor(amount * LAMPORTS_PER_SOL),
       });
 
+      const transaction = new Transaction().add(instruction);
       const signature = await sendTransaction(transaction, connection);
       setTxHash(signature);
       setSolAmount('');
