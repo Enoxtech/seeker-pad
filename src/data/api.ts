@@ -50,9 +50,18 @@ export const launchesApi = {
 };
 
 // Participation API
+interface ApiParticipation {
+  id: string;
+  launchId: string;
+  userAddress: string;
+  amountSol: string;
+  tokensReceived: string;
+  status: string;
+}
+
 export const participationApi = {
-  getUserParticipations: (address: string) => fetchApi(`/participation/user/${address}`),
-  getUserParticipation: (address: string, launchId: string) => fetchApi(`/participation/user/${address}/${launchId}`),
+  getUserParticipations: (address: string) => fetchApi<ApiParticipation[]>(`/participation/user/${address}`),
+  getUserParticipation: (address: string, launchId: string) => fetchApi<ApiParticipation>(`/participation/user/${address}/${launchId}`),
   create: (data: any) => fetchApi('/participation', {
     method: 'POST',
     body: JSON.stringify(data),
