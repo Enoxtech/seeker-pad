@@ -40,14 +40,17 @@ jobs:
           export PATH="/tmp/solana-release/bin:$PATH"
           cd smart-contract
           npm install
-          npx anchor build
+          npx anchor build 2>&1
 
-      - name: Show target directory
-        run: ls -la smart-contract/target/deploy/ 2>/dev/null || echo "No deploy dir"
+      - name: Find all .so files
+        run: find smart-contract -name "*.so" 2>/dev/null
 
-      - name: Upload artifact
+      - name: Show target structure
+        run: ls -la smart-contract/target/ 2>/dev/null || echo "No target folder"
+
+      - name: Upload any .so files
         uses: actions/upload-artifact@v4
         with:
           name: seekerpad-build
-          path: smart-contract/target/deploy
+          path: smart-contract/target
           retention-days: 30
