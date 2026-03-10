@@ -1,4 +1,4 @@
-name: Build Smart Contract
+name: Build SeekerPad Contract
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build with Anchor
+      - name: Build with Anchor (solana-fm)
         uses: solana-fm/anchor-build-action@v1.0.0
         with:
           anchor-version: 0.26.0
