@@ -32,18 +32,15 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Anchor
-        run: npm install -g @coral-xyz/anchor@0.26.0
-
-      - name: Fix npm PATH
-        run: echo "$(npm root -g)/../bin" >> $GITHUB_PATH
-
-      - name: Verify Anchor
-        run: anchor --version
-
-      - name: Build contract
+      - name: Install Anchor in smart-contract
         working-directory: smart-contract
-        run: anchor build
+        run: npm install @coral-xyz/anchor@0.26.0
+
+      - name: Build with npx
+        working-directory: smart-contract
+        run: |
+          source $HOME/.local/share/solana/install/active_release/env 2>/dev/null || true
+          npx anchor build
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
