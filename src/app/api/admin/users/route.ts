@@ -1,5 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+import { isSupabaseConfigured } from '@/lib/supabase';
+
+// Lazy client creation - only when needed
+const getClient = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  return createClient(url, key);
+};
 
 // Mock data fallback when Supabase not configured
 const mockUsers = [
@@ -16,8 +24,8 @@ export async function GET(request: Request) {
   try {
     // Use Supabase if configured
     if (isSupabaseConfigured) {
-      const supabase = getSupabase();
-      let query = supabase!.from('users').select('*');
+      const supabase = getClient();
+      let query = supabase.from('users').select('*');
       
       if (status !== 'all') {
         query = query.eq('kyc_status', status);
@@ -64,8 +72,8 @@ export async function POST(request: Request) {
     }
     
     if (isSupabaseConfigured) {
-      const supabase = getSupabase();
-      const { data, error } = await supabase!
+      const supabase = getClient();
+      const { data, error } = await supabase
         .from('users')
         .insert({
           wallet_address: body.wallet_address,
