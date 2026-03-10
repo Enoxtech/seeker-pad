@@ -22,25 +22,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-slate-900">
-      {/* Mobile Header - only shows on small screens */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-slate-800 border-b border-slate-700 z-50 flex items-center justify-between px-4">
-        <button 
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 text-slate-300 hover:text-white"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {sidebarOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-        </button>
-        <span className="text-white font-bold">Admin</span>
-        <div className="w-10" />
-      </header>
+      {/* Toggle Button - floating, works on both mobile & desktop */}
+      <button 
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-4 left-4 z-50 p-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {sidebarOpen ? (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          )}
+        </svg>
+      </button>
 
-      {/* Mobile Overlay */}
+      {/* Overlay - mobile only */}
       {sidebarOpen && (
         <div 
           className="lg:hidden fixed inset-0 bg-black/60 z-30"
@@ -48,23 +44,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         />
       )}
 
-      {/* Sidebar - fixed on all screens, toggles on mobile */}
+      {/* Sidebar */}
       <aside className={`
         fixed top-0 left-0 h-full w-56 bg-slate-800 border-r border-slate-700 z-40
         transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0
       `}>
-        <div className="h-14 flex items-center justify-between px-3 border-b border-slate-700">
+        <div className="h-14 flex items-center px-4 border-b border-slate-700">
           <h1 className="text-lg font-bold text-white">SeekerPad</h1>
-          <button 
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
         
         <nav className="p-2 overflow-y-auto h-[calc(100%-3.5rem)]">
@@ -76,7 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={item.href}
                 href={item.href}
                 onClick={() => {
-                  if (window.innerWidth < 1024) setSidebarOpen(false);
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024) setSidebarOpen(false);
                 }}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 transition-colors ${
                   isActive 
@@ -95,9 +83,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content */}
       <main className={`
         transition-all duration-300 ease-in-out
-        lg:ml-56
-        pt-14 lg:pt-6
-        p-4 lg:p-6
+        ${sidebarOpen ? 'lg:ml-56' : 'lg:ml-0'}
+        p-4 pt-16 lg:pt-6
       `}>
         <div className="max-w-7xl mx-auto">
           {children}
