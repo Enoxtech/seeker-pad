@@ -14,14 +14,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install Solana CLI
-        run: |
-          cd /tmp
-          curl -sSfL https://release.anza.xyz/v1.14.6/stable/solana-release-x86_64-unknown-linux-gnu.tar.bz2 | tar xj
-          echo "/tmp/solana-release/bin" >> $GITHUB_PATH
+      - name: Setup Solana
+        uses: solana-actions/setup-solana@v1
+        with:
+          version: 1.14.6
 
       - name: Verify Solana
         run: solana --version
