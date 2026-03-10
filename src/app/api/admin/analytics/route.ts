@@ -27,7 +27,7 @@ export async function GET() {
   
   if (supabase) {
     // Get real data from database
-    const [usersRes, launchesRes, transactionsRes] = await Promise.all([
+    const [usersRes, launchesRes, transactionsRes]: any = await Promise.all([
       supabase.from('users').select('id', { count: 'exact' }),
       supabase.from('launches').select('*').in('status', ['active', 'live']),
       supabase.from('transactions').select('*')
@@ -36,7 +36,7 @@ export async function GET() {
     if (usersRes.count) stats.totalUsers = usersRes.count;
     if (launchesRes.data) stats.activeLaunches = launchesRes.data.length;
     if (transactionsRes.data) {
-      stats.totalRaised = transactionsRes.data.reduce((sum, t) => sum + Number(t.amount_sol || 0), 0);
+      stats.totalRaised = transactionsRes.data.reduce((sum: number, t: any) => sum + Number(t.amount_sol || 0), 0);
     }
   }
   
