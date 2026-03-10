@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useWallet, formatAddress } from './wallet/useWallet';
 import WalletButton from './wallet/WalletButton';
+import AuthButton from './auth/AuthButton';
 
 function HeaderContent() {
   const [scrolled, setScrolled] = useState(false);
@@ -164,7 +165,10 @@ function HeaderContent() {
                 </button>
               </div>
             ) : (
-              <WalletButton />
+              <>
+                <AuthButton />
+                <WalletButton />
+              </>
             )}
 
             <button 
