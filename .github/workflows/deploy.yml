@@ -32,23 +32,22 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Anchor in smart-contract
-        working-directory: smart-contract
-        run: npm install @coral-xyz/anchor@0.26.0
+      - name: Install Anchor
+        run: npm install -g @coral-xyz/anchor@0.26.0
 
-      - name: Build with verbose output
-        working-directory: smart-contract
+      - name: Build contract
         run: |
-          source $HOME/.local/share/solana/install/active_release/env 2>/dev/null || true
-          npx anchor build --verbose
+          export PATH="/tmp/solana-release/bin:$PATH"
+          cd smart-contract
+          npm install
+          npx anchor build
 
-      - name: List all target files
-        working-directory: smart-contract
-        run: ls -la target/deploy/ 2>/dev/null || echo "No deploy folder"
+      - name: Show target directory
+        run: ls -la smart-contract/target/deploy/ 2>/dev/null || echo "No deploy dir"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: seekerpad-build
-          path: smart-contract/target
+          path: smart-contract/target/deploy
           retention-days: 30
