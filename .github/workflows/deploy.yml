@@ -14,11 +14,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build with Anchor (solana-fm)
-        uses: solana-fm/anchor-build-action@v1.0.0
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Solana CLI
+        run: |
+          cd /tmp
+          curl -sSfL https://release.anza.xyz/v1.14.6/stable/solana-release-x86_64-unknown-linux-gnu.tar.bz2 | tar xj
+          echo "/tmp/solana-release/bin" >> $GITHUB_PATH
+
+      - name: Verify Solana
+        run: solana --version
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
-          anchor-version: 0.26.0
-          solana-version: 1.14.6
+          node-version: 20
+
+      - name: Install Anchor
+        run: npm install -g @coral-xyz/anchor@0.26.0
+
+      - name: Build contract
+        working-directory: smart-contract
+        run: anchor build
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
