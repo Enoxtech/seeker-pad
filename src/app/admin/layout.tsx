@@ -18,11 +18,11 @@ const menuItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-900">
-      {/* Toggle Button - floating, works on both mobile & desktop */}
+      {/* Toggle Button - floating */}
       <button 
         onClick={() => setSidebarOpen(!sidebarOpen)}
         className="fixed top-4 left-4 z-50 p-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700"
@@ -36,10 +36,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </svg>
       </button>
 
-      {/* Overlay - mobile only */}
+      {/* Overlay */}
       {sidebarOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black/60 z-30"
+          className="fixed inset-0 bg-black/60 z-30"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -49,7 +49,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         fixed top-0 left-0 h-full w-56 bg-slate-800 border-r border-slate-700 z-40
         transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0
       `}>
         <div className="h-14 flex items-center px-4 border-b border-slate-700">
           <h1 className="text-lg font-bold text-white">SeekerPad</h1>
@@ -63,9 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => {
-                  if (typeof window !== 'undefined' && window.innerWidth < 1024) setSidebarOpen(false);
-                }}
+                onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 transition-colors ${
                   isActive 
                     ? 'bg-cyan-500/20 text-cyan-400' 
@@ -83,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content */}
       <main className={`
         transition-all duration-300 ease-in-out
-        ${sidebarOpen ? 'lg:ml-56' : 'lg:ml-0'}
+        ${sidebarOpen ? 'ml-56' : 'ml-0'}
         p-4 pt-16 lg:pt-6
       `}>
         <div className="max-w-7xl mx-auto">
