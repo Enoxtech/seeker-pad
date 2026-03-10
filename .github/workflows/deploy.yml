@@ -35,20 +35,25 @@ jobs:
       - name: Install Anchor
         run: npm install -g @coral-xyz/anchor@0.26.0
 
-      - name: Build contract
+      - name: Build contract (capture all output)
         run: |
           export PATH="/tmp/solana-release/bin:$PATH"
           cd smart-contract
-          npm install
+          npm install 2>&1
           npx anchor build 2>&1
+        env:
+          DEBUG: "*"
 
-      - name: Find all .so files
-        run: find smart-contract -name "*.so" 2>/dev/null
+      - name: Check target folder
+        run: |
+          echo "=== Target folder ==="
+          ls -la smart-contract/target/ 2>&1 || echo "No target"
+          echo "=== Deploy folder ==="
+          ls -la smart-contract/target/deploy/ 2>&1 || echo "No deploy"
+          echo "=== All .so files ==="
+          find smart-contract -name "*.so" 2>&1 || echo "No .so"
 
-      - name: Show target structure
-        run: ls -la smart-contract/target/ 2>/dev/null || echo "No target folder"
-
-      - name: Upload any .so files
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: seekerpad-build
