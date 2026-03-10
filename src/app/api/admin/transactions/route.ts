@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
 
 const mockTransactions = [
   { id: '1', tx_hash: '0xabc123...', type: 'buy', token: 'MEME', amount: '500', usd_value: '500', wallet_address: '0x1234...5678', status: 'confirmed', created_at: '2026-03-05T14:30:00Z' },
@@ -9,7 +9,8 @@ const mockTransactions = [
 export async function GET() {
   try {
     if (isSupabaseConfigured) {
-      const { data, error } = await supabase
+      const supabase = getSupabase();
+      const { data, error } = await supabase!
         .from('transactions')
         .select('*')
         .order('created_at', { ascending: false });

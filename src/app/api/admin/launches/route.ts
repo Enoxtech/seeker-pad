@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
 
 const mockLaunches = [
   { id: '1', name: 'Solana Meme', symbol: 'MEME', status: 'live', target_amount: 100000, raised_amount: 45000, start_date: '2026-03-01', end_date: '2026-03-15' },
@@ -10,7 +10,8 @@ const mockLaunches = [
 export async function GET() {
   try {
     if (isSupabaseConfigured) {
-      const { data, error } = await supabase
+      const supabase = getSupabase();
+      const { data, error } = await supabase!
         .from('launches')
         .select('*')
         .order('created_at', { ascending: false });

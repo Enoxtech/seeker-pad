@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
 
 const mockKYC = [
   { id: '1', wallet_address: '0x1234...5678', email: 'john@example.com', status: 'verified', submitted_at: '2026-03-01', documents_count: 3 },
@@ -10,7 +10,8 @@ const mockKYC = [
 export async function GET() {
   try {
     if (isSupabaseConfigured) {
-      const { data, error } = await supabase
+      const supabase = getSupabase();
+      const { data, error } = await supabase!
         .from('kyc_requests')
         .select('*')
         .order('submitted_at', { ascending: false });
