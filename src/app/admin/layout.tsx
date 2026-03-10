@@ -23,7 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-slate-900">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-slate-800 border-b border-slate-700 z-50 flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-slate-800 border-b border-slate-700 z-50 flex items-center justify-between px-4">
         <button 
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="p-2 text-slate-300 hover:text-white"
@@ -37,28 +37,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </svg>
         </button>
         <span className="text-white font-bold">Admin</span>
-        <div className="w-10" /> {/* Spacer */}
+        <div className="w-10" />
       </header>
 
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="lg:hidden fixed inset-0 bg-black/60 z-40"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside className={`
-        fixed top-0 h-full bg-slate-800 border-r border-slate-700 z-50
-        w-64 transition-transform duration-300
+      <div className={`
+        fixed top-0 h-full w-64 bg-slate-800 border-r border-slate-700 z-50
+        transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:z-auto
+        lg:translate-x-0
       `}>
-        <div className="p-4 border-b border-slate-700">
-          <h1 className="text-lg font-bold text-white truncate">SeekerPad Admin</h1>
+        <div className="h-14 flex items-center px-4 border-b border-slate-700">
+          <h1 className="text-lg font-bold text-white">SeekerPad</h1>
         </div>
-        <nav className="p-2 overflow-y-auto h-[calc(100%-65px)]">
+        <nav className="p-2 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = pathname === item.href || 
               (item.href !== '/admin' && pathname?.startsWith(item.href));
@@ -79,10 +79,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             );
           })}
         </nav>
-      </aside>
+      </div>
 
       {/* Main Content */}
-      <main className="lg:ml-64 pt-16 lg:pt-0 p-4 lg:p-6 min-h-screen">
+      <main className="lg:ml-64 pt-14 lg:pt-6 p-4 lg:p-6">
         <div className="max-w-7xl mx-auto">
           {children}
         </div>
