@@ -42,9 +42,13 @@ jobs:
           source $HOME/.local/share/solana/install/active_release/env 2>/dev/null || true
           npx anchor build
 
+      - name: List build output
+        working-directory: smart-contract
+        run: find target -name "*.so" 2>/dev/null
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: seekerpad-so
-          path: smart-contract/target/deploy/seekerpad.so
+          path: smart-contract/target
           retention-days: 30
