@@ -10,26 +10,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/coral-xyz/anchor:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
+      - name: Verify Anchor
+        run: anchor --version
 
-      - name: Install Solana CLI
-        run: |
-          sh -c "$(curl -sSfL 'https://release.anza.xyz/v1.14.6/stable/install')"
-        shell: bash
-
-      - name: Add Solana to PATH
-        run: echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-
-      - name: Build with cargo build-sbf
+      - name: Build contract
         working-directory: ./smart-contract
-        run: |
-          source $HOME/.local/share/solana/install/active_release/env
-          cargo build-bpf --program-target bpfel-unknown-unknown -Z unstable-cmdflags
-        shell: bash
+        run: anchor build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: seekerpad-so
+          path: smart-contract/target/deploy/seekerpad.so
+          retention-days: 30
