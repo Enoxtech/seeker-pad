@@ -51,7 +51,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="h-14 flex items-center px-4 border-b border-slate-700">
-          <h1 className="text-lg font-bold text-white">SeekerPad</h1>
+          <img src="/seekers.png" alt="SeekerPad" className="h-8 w-auto" />
         </div>
         
         <nav className="p-2 overflow-y-auto h-[calc(100%-3.5rem)]">
