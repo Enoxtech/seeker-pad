@@ -14,10 +14,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Solana
-        uses: solana-actions/setup-solana@v1
-        with:
-          version: 1.14.6
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Download Solana CLI
+        run: |
+          cd /tmp
+          wget -q https://github.com/solana-labs/solana/releases/download/v1.14.6/solana-release-x86_64-unknown-linux-gnu.tar.bz2
+          tar xjf solana-release-x86_64-unknown-linux-gnu.tar.bz2
+          echo "/tmp/solana-release/bin" >> $GITHUB_PATH
 
       - name: Verify Solana
         run: solana --version
@@ -27,10 +32,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Anchor CLI
+      - name: Install Anchor
         run: npm install -g @coral-xyz/anchor@0.26.0
 
-      - name: Fix npm global PATH
+      - name: Fix npm PATH
         run: echo "$(npm root -g)/../bin" >> $GITHUB_PATH
 
       - name: Verify Anchor
