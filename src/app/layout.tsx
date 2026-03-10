@@ -14,6 +14,9 @@ const WalletAdapterProvider = dynamic(
 export const metadata = {
   title: "SeekerPad - Solana Mobile Launchpad",
   description: "The premier gateway for discovering and investing in the next generation of Solana Mobile projects",
+  icons: {
+    icon: "/seekers.png",
+  },
 };
 
 export default function RootLayout({
