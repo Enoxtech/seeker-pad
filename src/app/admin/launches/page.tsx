@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState, useEffect } from 'react';
 
 interface Launch {
@@ -46,7 +47,7 @@ export default function AdminLaunches() {
       {loading ? (
         <div className="text-center text-slate-400 py-8">Loading...</div>
       ) : (
-       ="grid gap- <div className4">
+        <div className="grid gap-4">
           {launches.map((launch) => {
             const progress = (parseInt(launch.raised) / parseInt(launch.target)) * 100;
             return (
