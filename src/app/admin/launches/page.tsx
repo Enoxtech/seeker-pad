@@ -5,6 +5,7 @@ interface Launch {
   id: string;
   name: string;
   symbol: string;
+  type?: string;
   status: 'upcoming' | 'active' | 'ended' | 'live';
   total_raised: number;
   participants_count: number;
