@@ -81,7 +81,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <main className={`
         transition-all duration-300 ease-in-out
         ${sidebarOpen ? 'ml-56' : 'ml-0'}
-        p-4 pt-16 lg:pt-6
+        p-4 ${sidebarOpen ? 'pt-6' : 'pt-20'}
       `}>
         <div className="max-w-7xl mx-auto">
           {children}
