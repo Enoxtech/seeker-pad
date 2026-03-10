@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useWallet, formatAddress } from './wallet/useWallet';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import WalletButton from './wallet/WalletButton';
 
 function HeaderContent() {
   const [scrolled, setScrolled] = useState(false);
@@ -164,7 +164,7 @@ function HeaderContent() {
                 </button>
               </div>
             ) : (
-              <WalletMultiButton className="!btn-glossy !px-3 !py-1.5 sm:!px-4 sm:!py-2 !rounded-xl !text-xs sm:!text-sm !font-semibold !text-white" />
+              <WalletButton />
             )}
 
             <button 
