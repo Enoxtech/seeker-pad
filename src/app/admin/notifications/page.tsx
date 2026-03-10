@@ -72,7 +72,7 @@ export default function AdminNotifications() {
                 <td className="p-4 text-slate-300">{notif.recipients}</td>
                 <td className="p-4 text-slate-300">{notif.sent}</td>
                 <td className="p-4 text-cyan-400">
-                  {notif.opened ? `${Math.round((notif.opened/notif.sent)*100)}%` : `${Math.round((notif.delivered/notif.sent)*100)}%`}
+                  {notif.opened ? `${Math.round((parseInt(notif.opened.replace(/,/g, ''))/parseInt(notif.sent.replace(/,/g, '')))*100)}%` : `${Math.round((parseInt(notif.delivered.replace(/,/g, ''))/parseInt(notif.sent.replace(/,/g, '')))*100)}%`}
                 </td>
                 <td className="p-4">
                   <span className={`px-2 py-1 rounded text-xs font-medium ${
