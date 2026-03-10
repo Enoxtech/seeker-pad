@@ -27,22 +27,9 @@ jobs:
       - name: Add Solana to PATH
         run: echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
-      - name: Verify Solana
-        run: |
-          source $HOME/.local/share/solana/install/active_release/env
-          solana --version
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Anchor CLI locally
-        working-directory: ./smart-contract
-        run: npm install @coral-xyz/anchor@0.26.0
-
-      - name: Build contract
+      - name: Build with cargo build-sbf
         working-directory: ./smart-contract
         run: |
           source $HOME/.local/share/solana/install/active_release/env
-          npx anchor build
+          cargo build-bpf --program-target bpfel-unknown-unknown -Z unstable-cmdflags
+        shell: bash
