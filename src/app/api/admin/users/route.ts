@@ -1,48 +1,96 @@
 import { NextResponse } from 'next/server';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
-// Mock data for now - can connect to Supabase later
-const users = [
-  { id: 1, wallet: '0x1234...5678', email: 'john@example.com', role: 'User', kyc: 'Verified', joined: '2026-02-15', participation: '2500', status: 'Active' },
-  { id: 2, wallet: '0xabcd...efgh', email: 'jane@example.com', role: 'User', kyc: 'Pending', joined: '2026-02-20', participation: '500', status: 'Active' },
-  { id: 3, wallet: '0x9876...5432', email: 'bob@example.com', role: 'Admin', kyc: 'Verified', joined: '2026-01-10', participation: '0', status: 'Active' },
-  { id: 4, wallet: '0xdef0...1234', email: 'alice@example.com', role: 'User', kyc: 'Rejected', joined: '2026-02-25', participation: '0', status: 'Suspended' },
-  { id: 5, wallet: '0x5678...90ab', email: 'charlie@example.com', role: 'User', kyc: 'Verified', joined: '2026-03-01', participation: '1000', status: 'Active' },
-  { id: 6, wallet: '0x2468...1357', email: 'david@example.com', role: 'User', kyc: 'Verified', joined: '2026-03-05', participation: '750', status: 'Active' },
+// Mock data fallback when Supabase not configured
+const mockUsers = [
+  { id: '1', wallet_address: '0x1234...5678', email: 'john@example.com', role: 'user', kyc_status: 'verified', created_at: '2026-02-15' },
+  { id: '2', wallet_address: '0xabcd...efgh', email: 'jane@example.com', role: 'user', kyc_status: 'pending', created_at: '2026-02-20' },
+  { id: '3', wallet_address: '0x9876...5432', email: 'bob@example.com', role: 'admin', kyc_status: 'verified', created_at: '2026-01-10' },
 ];
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const filter = searchParams.get('status') || 'All';
+  const status = searchParams.get('status') || 'all';
   const search = searchParams.get('search') || '';
   
-  let filtered = users;
-  
-  if (filter !== 'All') {
-    filtered = filtered.filter(u => u.status === filter);
+  try {
+    // Use Supabase if configured
+    if (isSupabaseConfigured) {
+      let query = supabase.from('users').select('*');
+      
+      if (status !== 'all') {
+        query = query.eq('kyc_status', status);
+      }
+      
+      if (search) {
+        query = query.or(`wallet_address.ilike.%${search}%,email.ilike.%${search}%`);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      return NextResponse.json({ users: data || [], total: data?.length || 0 });
+    }
+    
+    // Fallback to mock data
+    let filtered = mockUsers;
+    if (status !== 'all') {
+      filtered = filtered.filter(u => u.kyc_status === status);
+    }
+    if (search) {
+      filtered = filtered.filter(u => 
+        u.wallet_address.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    return NextResponse.json({ users: filtered, total: filtered.length });
+    
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
-  
-  if (search) {
-    filtered = filtered.filter(u => 
-      u.wallet.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
-    );
-  }
-  
-  return NextResponse.json({ users: filtered, total: filtered.length });
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  
-  const newUser = {
-    id: users.length + 1,
-    ...body,
-    joined: new Date().toISOString().split('T')[0],
-    participation: 0,
-    status: 'Active',
-  };
-  
-  users.push(newUser);
-  
-  return NextResponse.json({ success: true, user: newUser });
+  try {
+    const body = await request.json();
+    
+    // Input validation
+    if (!body.wallet_address || !body.email) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+    
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase
+        .from('users')
+        .insert([{
+          wallet_address: body.wallet_address,
+          email: body.email,
+          role: body.role || 'user',
+          kyc_status: body.kyc_status || 'none',
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return NextResponse.json({ success: true, user: data });
+    }
+    
+    // Mock fallback
+    const newUser = {
+      id: String(mockUsers.length + 1),
+      ...body,
+      created_at: new Date().toISOString(),
+    };
+    mockUsers.push(newUser);
+    
+    return NextResponse.json({ success: true, user: newUser });
+    
+  } catch (error) {
+    console.error('Error creating user:', error);
+    return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+  }
 }
