@@ -1,0 +1,57 @@
+name: Build Smart Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'smart-contract/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL 'https://release.anza.xyz/v1.14.6/stable/install')"
+        shell: bash
+
+      - name: Add Solana to PATH
+        run: echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Verify Solana
+        run: |
+          source $HOME/.local/share/solana/install/active_release/env
+          solana --version
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Anchor
+        run: npm install -g @coral-xyz/anchor@0.26.0
+
+      - name: Verify Anchor
+        run: anchor --version
+
+      - name: Build contract
+        working-directory: ./smart-contract
+        run: |
+          source $HOME/.local/share/solana/install/active_release/env
+          anchor build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: seekerpad-so
+          path: smart-contract/target/deploy/seekerpad.so
+          retention-days: 30
