@@ -195,3 +195,72 @@ CREATE TABLE IF NOT EXISTS project_applications (
     submitted_at TIMESTAMP DEFAULT NOW(),
     reviewed_at TIMESTAMP
 );
+
+-- Admin Users table
+CREATE TABLE IF NOT EXISTS admin_users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) DEFAULT 'admin', -- 'admin', 'super_admin'
+    name VARCHAR(100),
+    created_at TIMESTAMP DEFAULT NOW(),
+    last_login TIMESTAMP
+);
+
+-- KYC Applications
+CREATE TABLE IF NOT EXISTS kyc_applications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    wallet_address VARCHAR(44) NOT NULL,
+    email VARCHAR(255),
+    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+    document_type VARCHAR(50), -- 'passport', 'drivers_license', 'national_id'
+    document_url VARCHAR(500),
+    rejection_reason TEXT,
+    submitted_at TIMESTAMP DEFAULT NOW(),
+    reviewed_at TIMESTAMP,
+    reviewed_by UUID REFERENCES admin_users(id)
+);
+
+-- Transactions (for admin view)
+CREATE TABLE IF NOT EXISTS transactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_address VARCHAR(44) NOT NULL,
+    launch_id UUID REFERENCES launches(id),
+    type VARCHAR(20) NOT NULL, -- 'participation', 'claim', 'withdrawal', 'purchase'
+    amount_sol DECIMAL(20, 9) NOT NULL,
+    tokens_amount BIGINT,
+    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'confirmed', 'failed'
+    tx_signature VARCHAR(100),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    type VARCHAR(20) NOT NULL, -- 'email', 'sms'
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    recipients JSONB NOT NULL, -- {type: 'all' | 'wallets', addresses: []}
+    status VARCHAR(20) DEFAULT 'draft', -- 'draft', 'scheduled', 'sent', 'failed'
+    scheduled_at TIMESTAMP,
+    sent_at TIMESTAMP,
+    created_by UUID REFERENCES admin_users(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    stats JSONB -- {sent: 0, delivered: 0, opened: 0}
+);
+
+-- Audit Logs
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    admin_id UUID REFERENCES admin_users(id),
+    admin_email VARCHAR(255),
+    action VARCHAR(100) NOT NULL,
+    details JSONB,
+    ip_address VARCHAR(45),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Insert default admin user (password: admin123)
+INSERT INTO admin_users (email, password_hash, role, name) VALUES 
+    ('admin@seekepad.com', '$2a$10$yourhashhere', 'super_admin', 'Main Admin')
+ON CONFLICT (email) DO NOTHING;
