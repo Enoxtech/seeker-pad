@@ -67,12 +67,12 @@ export async function POST(request: Request) {
       const supabase = getSupabase();
       const { data, error } = await supabase!
         .from('users')
-        .insert([{
+        .insert({
           wallet_address: body.wallet_address,
           email: body.email,
           role: body.role || 'user',
           kyc_status: body.kyc_status || 'none',
-        }])
+        })
         .select()
         .single();
       
