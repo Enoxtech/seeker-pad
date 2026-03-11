@@ -1,6 +1,8 @@
 // API client for SeekerPad
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+// Use relative URLs for Same-Origin (works both locally and on Vercel)
+// For separate backend deployment, set NEXT_PUBLIC_API_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 interface FetchOptions extends RequestInit {
   timeout?: number;
