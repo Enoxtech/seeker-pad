@@ -51,7 +51,7 @@ export default function AdminLaunches() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-      let data = {};
+      let data: any = {};
       try {
         data = await res.json();
       } catch (e) {}
