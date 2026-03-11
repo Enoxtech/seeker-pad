@@ -38,18 +38,20 @@ export async function GET() {
 export async function POST(request: Request) {
   const supabase = getSupabase();
   let body = {};
+  
+  if (!supabase) {
+    // Return mock success for demo when Supabase unavailable
+    body = await request.json();
+    return NextResponse.json({ 
+      id: Date.now().toString(), 
+      ...body, 
+      status: 'upcoming',
+      created_at: new Date().toISOString()
+    });
+  }
+  
   try {
     body = await request.json();
-    
-    if (!supabase) {
-      // Return mock success for demo when Supabase unavailable
-      return NextResponse.json({ 
-        id: Date.now().toString(), 
-        ...body, 
-        status: 'upcoming',
-        created_at: new Date().toISOString()
-      });
-    }
     
     const { data, error } = await supabase
       .from('launches')
@@ -57,16 +59,13 @@ export async function POST(request: Request) {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error creating launch, using mock response:', error);
-    // Return mock success for demo
-    return NextResponse.json({ 
-      id: Date.now().toString(), 
-      ...body, 
-      status: 'upcoming',
-      created_at: new Date().toISOString()
-    });
+  } catch (error: any) {
+    console.error('Error creating launch:', error);
+    return NextResponse.json({ error: error.message || 'Unknown error' }, { status: 500 });
   }
 }
