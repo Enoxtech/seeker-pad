@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://htkslwnrqcdjspdyuqhg.supabase.co',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0a3Nsd25ycWNkanNwZHl1cGgiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjU0OTcwNiwiZXhwIjo5NTgxMjU3MDZ9.Vx5kORlLMLMdcVPBNT6-Tk9dJI6FbLHqQ0r6i3jC2E'
-);
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 // Mock data
 const mockUsers = [
@@ -15,6 +17,10 @@ const mockUsers = [
 
 export async function GET() {
   try {
+    const supabase = getSupabase();
+    if (!supabase) {
+      return NextResponse.json(mockUsers);
+    }
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -29,9 +35,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const supabase = getSupabase();
   let body = {};
   try {
     body = await request.json();
+    
+    if (!supabase) {
+      return NextResponse.json({ id: Date.now().toString(), ...body, kyc_status: 'pending', created_at: new Date().toISOString() });
+    }
+    
     const { data, error } = await supabase
       .from('users')
       .insert([{ ...body, kyc_status: 'pending' }])

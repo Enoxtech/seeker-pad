@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://htkslwnrqcdjspdyuqhg.supabase.co',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0a3Nsd25ycWNkanNwZHl1cGgiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjU0OTcwNiwiZXhwIjo5NTgxMjU3MDZ9.Vx5kORlLMLMdcVPBNT6-Tk9dJI6FbLHqQ0r6i3jC2E'
-);
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 // Mock data for production when Supabase is unavailable
 const mockLaunches = [
@@ -16,6 +18,10 @@ const mockLaunches = [
 
 export async function GET() {
   try {
+    const supabase = getSupabase();
+    if (!supabase) {
+      return NextResponse.json(mockLaunches);
+    }
     const { data, error } = await supabase
       .from('launches')
       .select('*')
@@ -30,9 +36,21 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const supabase = getSupabase();
   let body = {};
   try {
     body = await request.json();
+    
+    if (!supabase) {
+      // Return mock success for demo when Supabase unavailable
+      return NextResponse.json({ 
+        id: Date.now().toString(), 
+        ...body, 
+        status: 'upcoming',
+        created_at: new Date().toISOString()
+      });
+    }
+    
     const { data, error } = await supabase
       .from('launches')
       .insert([{ ...body, status: 'upcoming' }])
