@@ -30,8 +30,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  let body = {};
   try {
-    const body = await request.json();
+    body = await request.json();
     const { data, error } = await supabase
       .from('launches')
       .insert([{ ...body, status: 'upcoming' }])

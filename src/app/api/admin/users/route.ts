@@ -29,8 +29,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  let body = {};
   try {
-    const body = await request.json();
+    body = await request.json();
     const { data, error } = await supabase
       .from('users')
       .insert([{ ...body, kyc_status: 'pending' }])
