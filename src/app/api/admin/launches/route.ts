@@ -36,27 +36,27 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const supabase = getSupabase();
-  
-  let body = {};
   try {
-    body = await request.json();
-  } catch (e) {
-    console.error('Failed to parse JSON:', e);
-    return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
-  }
-  
-  if (!supabase) {
-    // Return mock success for demo when Supabase unavailable
-    return NextResponse.json({ 
-      id: Date.now().toString(), 
-      ...body, 
-      status: 'upcoming',
-      created_at: new Date().toISOString()
-    });
-  }
-  
-  try {
+    const supabase = getSupabase();
+    
+    let body = {};
+    try {
+      body = await request.json();
+    } catch (e) {
+      console.error('Failed to parse JSON:', e);
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
+    
+    if (!supabase) {
+      // Return mock success for demo when Supabase unavailable
+      return NextResponse.json({ 
+        id: Date.now().toString(), 
+        ...body, 
+        status: 'upcoming',
+        created_at: new Date().toISOString()
+      });
+    }
+    
     const { data, error } = await supabase
       .from('launches')
       .insert([{ ...body, status: 'upcoming' }])
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('Error creating launch:', error);
-    return NextResponse.json({ error: error.message || 'Unknown error' }, { status: 500 });
+    console.error('Fatal error in POST:', error);
+    return NextResponse.json({ error: error.message || error.toString() || 'Unknown fatal error' }, { status: 500 });
   }
 }
