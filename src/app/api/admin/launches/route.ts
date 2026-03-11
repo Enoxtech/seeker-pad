@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0a3Nsd25ycWNkanNwZHl1cGgiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjU0OTcwNiwiZXhwIjo5NTgxMjU3MDZ9.Vx5kORlLMLMdcVPBNT6-Tk9dJI6FbLHqQ0r6i3jC2E'
 );
 
-// Mock data for when Supabase is unavailable
+// Mock data for production when Supabase is unavailable
 const mockLaunches = [
   { id: '1', name: 'Solana Meme Lords', symbol: 'SML', status: 'active', total_raised: 42350, participants_count: 156, start_time: '2026-03-01', end_time: '2026-03-15' },
   { id: '2', name: 'Bonkify', symbol: 'BONK', status: 'active', total_raised: 68200, participants_count: 234, start_time: '2026-03-05', end_time: '2026-03-12' },
