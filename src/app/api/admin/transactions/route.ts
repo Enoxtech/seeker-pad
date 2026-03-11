@@ -8,9 +8,9 @@ const supabase = createClient(
 
 // Mock data
 const mockTransactions = [
-  { id: '1', user_id: 'user1', type: 'purchase', amount: '2.5 SOL', launch_id: '1', status: 'completed', created_at: '2026-03-10T10:00:00Z' },
-  { id: '2', user_id: 'user2', type: 'claim', amount: '125000 PXW', launch_id: '4', status: 'completed', created_at: '2026-03-10T09:00:00Z' },
-  { id: '3', user_id: 'user3', type: 'purchase', amount: '10 SOL', launch_id: '2', status: 'pending', created_at: '2026-03-10T08:00:00Z' },
+  { id: '1', user_address: '7xKXtg2CW8YHZr2K3vLkLqGqXDhV3m', type: 'purchase', amount_sol: 2.5, status: 'confirmed', tx_signature: 'abc123xyz', created_at: '2026-03-10T10:00:00Z' },
+  { id: '2', user_address: '9aZKTtbD7mBnK9hL5nCpQ8rT', type: 'claim', amount_sol: 125, status: 'confirmed', tx_signature: 'def456uvw', created_at: '2026-03-10T09:00:00Z' },
+  { id: '3', user_address: '3mBnK9hL5nCpQ8rT9aZKXy', type: 'purchase', amount_sol: 10, status: 'pending', tx_signature: 'ghi789rst', created_at: '2026-03-10T08:00:00Z' },
 ];
 
 export async function GET() {

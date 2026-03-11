@@ -8,9 +8,9 @@ const supabase = createClient(
 
 // Mock data
 const mockKYC = [
-  { id: '1', user_id: 'user1', status: 'verified', submitted_at: '2026-03-01', verified_at: '2026-03-02' },
-  { id: '2', user_id: 'user2', status: 'verified', submitted_at: '2026-03-02', verified_at: '2026-03-03' },
-  { id: '3', user_id: 'user3', status: 'pending', submitted_at: '2026-03-05', verified_at: null },
+  { id: '1', wallet_address: '7xKXtg2CW8YHZr2K3vLkLqGqXDhV3m', email: 'user1@example.com', status: 'approved', document_type: 'passport', submitted_at: '2026-03-01' },
+  { id: '2', wallet_address: '9aZKTtbD7mBnK9hL5nCpQ8rT', email: 'user2@example.com', status: 'approved', document_type: 'national_id', submitted_at: '2026-03-02' },
+  { id: '3', wallet_address: '3mBnK9hL5nCpQ8rT9aZKXy', email: 'user3@example.com', status: 'pending', document_type: 'drivers_license', submitted_at: '2026-03-05' },
 ];
 
 export async function GET() {
