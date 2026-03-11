@@ -37,11 +37,17 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const supabase = getSupabase();
+  
   let body = {};
+  try {
+    body = await request.json();
+  } catch (e) {
+    console.error('Failed to parse JSON:', e);
+    return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+  }
   
   if (!supabase) {
     // Return mock success for demo when Supabase unavailable
-    body = await request.json();
     return NextResponse.json({ 
       id: Date.now().toString(), 
       ...body, 
@@ -51,8 +57,6 @@ export async function POST(request: Request) {
   }
   
   try {
-    body = await request.json();
-    
     const { data, error } = await supabase
       .from('launches')
       .insert([{ ...body, status: 'upcoming' }])

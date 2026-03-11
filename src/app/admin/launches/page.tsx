@@ -51,13 +51,16 @@ export default function AdminLaunches() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (e) {}
       if (res.ok) {
         setShowModal(false);
         setFormData({ name: '', symbol: '', description: '', type: 'standard', totalSupply: '', launchPrice: '', raiseTarget: '', startTime: '', endTime: '' });
         fetchLaunches();
       } else {
-        alert('Error: ' + (data.error || 'Failed to create launch'));
+        alert('Error: ' + (data.error || `Failed (${res.status})`));
       }
     } catch (err: any) {
       alert('Error: ' + err.message);
