@@ -23,10 +23,21 @@ export default function AdminKYC() {
     fetch('/api/admin/kyc')
       .then(res => res.json())
       .then(data => {
-        setKycRecords(data);
+        // Handle error response from API
+        if (data && typeof data === 'object' && 'error' in data) {
+          console.error('API error:', data.error);
+          setKycRecords([]);
+        } else if (Array.isArray(data)) {
+          setKycRecords(data);
+        } else {
+          setKycRecords([]);
+        }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setKycRecords([]);
+        setLoading(false);
+      });
   };
 
   const handleReview = async (id: string, status: 'approved' | 'rejected') => {

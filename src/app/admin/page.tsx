@@ -41,9 +41,14 @@ export default function AdminDashboard() {
     fetch('/api/admin/analytics')
       .then(res => res.json())
       .then(data => {
-        setStats(data.stats || data);
-        setRecentActivity(data.recentActivity || []);
-        setLaunches(data.launches || []);
+        // Handle error response from API
+        if (data && typeof data === 'object' && 'error' in data) {
+          console.error('API error:', data.error);
+        } else {
+          setStats(data.stats || data);
+          setRecentActivity(data.recentActivity || []);
+          setLaunches(data.launches || []);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));

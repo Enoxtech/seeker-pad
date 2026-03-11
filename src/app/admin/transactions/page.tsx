@@ -25,10 +25,21 @@ export default function AdminTransactions() {
     fetch('/api/admin/transactions')
       .then(res => res.json())
       .then(data => {
-        setTransactions(data);
+        // Handle error response from API
+        if (data && typeof data === 'object' && 'error' in data) {
+          console.error('API error:', data.error);
+          setTransactions([]);
+        } else if (Array.isArray(data)) {
+          setTransactions(data);
+        } else {
+          setTransactions([]);
+        }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setTransactions([]);
+        setLoading(false);
+      });
   };
 
   const filteredTransactions = transactions.filter(t => {

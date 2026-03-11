@@ -37,10 +37,21 @@ export default function AdminLaunches() {
     fetch('/api/admin/launches')
       .then(res => res.json())
       .then(data => {
-        setLaunches(data);
+        // Handle error response from API
+        if (data && typeof data === 'object' && 'error' in data) {
+          console.error('API error:', data.error);
+          setLaunches([]);
+        } else if (Array.isArray(data)) {
+          setLaunches(data);
+        } else {
+          setLaunches([]);
+        }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setLaunches([]);
+        setLoading(false);
+      });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

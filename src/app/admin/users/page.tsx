@@ -30,10 +30,21 @@ export default function AdminUsers() {
     fetch('/api/admin/users')
       .then(res => res.json())
       .then(data => {
-        setUsers(data);
+        // Handle error response from API
+        if (data && typeof data === 'object' && 'error' in data) {
+          console.error('API error:', data.error);
+          setUsers([]);
+        } else if (Array.isArray(data)) {
+          setUsers(data);
+        } else {
+          setUsers([]);
+        }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setUsers([]);
+        setLoading(false);
+      });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
