@@ -37,13 +37,14 @@ export async function GET() {
 export async function POST(request: Request) {
   const supabase = getSupabase();
   let body = {};
+  
+  if (!supabase) {
+    body = await request.json();
+    return NextResponse.json({ id: Date.now().toString(), ...body, status: 'sent', sent_at: new Date().toISOString() });
+  }
+  
   try {
     body = await request.json();
-    
-    if (!supabase) {
-      return NextResponse.json({ id: Date.now().toString(), ...body, status: 'sent', sent_at: new Date().toISOString() });
-    }
-    
     const { data, error } = await supabase
       .from('notifications')
       .insert([{ ...body, read: false }])
