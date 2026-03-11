@@ -1,27 +1,39 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-const mockNotifications = [
-  { id: '1', type: 'email', title: 'New Launch Alert', recipients: '12,458', opened: 8420, clicked: 2340, status: 'sent', sent_at: '2026-03-10T10:00:00Z' },
-  { id: '2', type: 'email', title: 'Launch Ending Soon', recipients: '892', opened: 756, clicked: 234, status: 'sent', sent_at: '2026-03-09T14:30:00Z' },
-  { id: '3', type: 'sms', title: 'KYC Approved', recipients: '156', delivered: 154, status: 'sent', sent_at: '2026-03-09T10:00:00Z' },
-  { id: '4', type: 'email', title: 'Token Claim Ready', recipients: '412', opened: 389, clicked: 156, status: 'sent', sent_at: '2026-03-08T16:00:00Z' },
-  { id: '5', type: 'email', title: 'KYC Verification Required', recipients: '23', opened: 18, clicked: 12, status: 'sent', sent_at: '2026-03-08T09:00:00Z' },
-  { id: '6', type: 'sms', title: 'Wallets Connected', recipients: '2,340', delivered: 2290, status: 'sent', sent_at: '2026-03-07T12:00:00Z' },
-];
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function GET() {
-  return NextResponse.json(mockNotifications);
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return NextResponse.json(data || []);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  
-  return NextResponse.json({
-    id: Date.now().toString(),
-    type: body.type,
-    title: body.title,
-    recipients: body.recipients,
-    status: 'sent',
-    sent_at: new Date().toISOString()
-  });
+  try {
+    const body = await request.json();
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert([{ ...body, read: false }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    return NextResponse.json({ error: 'Failed to create notification' }, { status: 500 });
+  }
 }

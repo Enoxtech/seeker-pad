@@ -5,7 +5,8 @@ const USE_MOCK = false;
 
 // Use Supabase REST API
 const SUPABASE_URL = 'https://htkslwnrqcdjspdyuqhg.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0a3Nsd25ycWNkanNwZHl1cGgiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjU0OTcwNiwiZXhwIjoxOTU4MTI1NzA2fQ.Vx5kORlLMLMdcVPBNT6-Tk9dJI6FbLHqQ0r6i3jC2E';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0a3Nsd25ycWNkanNwZHl1cWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNjQyMTIsImV4cCI6MjA4ODY0MDIxMn0.Gph4VcskabWNRnK2k1QyhzO9siLvvPeNrz92fZXQ1yY';
+const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0a3Nsd25ycWNkanNwZHl1cWhnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzA2NDIxMiwiZXhwIjoyMDg4NjQwMjEyfQ.TwoFqCiJeOPkPFLtyD7Inpa24h5xoJ6BefRuqCJsRWM';
 
 // Use pg Pool only if we can connect, otherwise use REST API
 let pool: Pool | null = null;
@@ -71,7 +72,7 @@ async function restQuery(table: string, sql: string, params: any[] = []): Promis
       }
       
       const data = await response.json();
-      return { rows: data || [], command: 'SELECT' };
+      return { rows: Array.isArray(data) ? data : [], command: 'SELECT' };
     } catch (error) {
       console.error('REST API fetch error:', error);
       return { rows: [], command: 'SELECT' };
@@ -79,7 +80,7 @@ async function restQuery(table: string, sql: string, params: any[] = []): Promis
   }
   
   // For now, return success for inserts/updates (they won't persist without proper REST implementation)
-  return { rows: [] as any[], command: sqlLower.split(' ')[0].toUpperCase() };
+  return { rows: [] as any[], command: (sqlLower.split(' ')[0] || 'UNKNOWN').toUpperCase() };
 }
 
 // Create connection pool (for future use when DNS is fixed)
