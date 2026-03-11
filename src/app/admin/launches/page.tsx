@@ -45,15 +45,22 @@ export default function AdminLaunches() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch('/api/admin/launches', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
-    if (res.ok) {
-      setShowModal(false);
-      setFormData({ name: '', symbol: '', description: '', type: 'standard', totalSupply: '', launchPrice: '', raiseTarget: '', startTime: '', endTime: '' });
-      fetchLaunches();
+    try {
+      const res = await fetch('/api/admin/launches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShowModal(false);
+        setFormData({ name: '', symbol: '', description: '', type: 'standard', totalSupply: '', launchPrice: '', raiseTarget: '', startTime: '', endTime: '' });
+        fetchLaunches();
+      } else {
+        alert('Error: ' + (data.error || 'Failed to create launch'));
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
     }
   };
 
