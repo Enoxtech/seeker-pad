@@ -19,7 +19,11 @@ const mockLaunches = [
 export async function GET() {
   try {
     const supabase = getSupabase();
+    console.log('GET: supabase client:', supabase ? 'exists' : 'null');
+    console.log('GET: URL env:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+    
     if (!supabase) {
+      console.log('GET: returning mock (no supabase)');
       return NextResponse.json(mockLaunches);
     }
     const { data, error } = await supabase
@@ -27,11 +31,14 @@ export async function GET() {
       .select('*')
       .order('created_at', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.log('GET: supabase error:', error);
+      throw error;
+    }
     return NextResponse.json(data || mockLaunches);
-  } catch (error) {
-    console.error('Error fetching launches, using mock data:', error);
-    return NextResponse.json(mockLaunches);
+  } catch (error: any) {
+    console.error('GET: Error fetching launches:', error);
+    return NextResponse.json({ error: error.message || 'Failed to fetch launches' }, { status: 500 });
   }
 }
 
