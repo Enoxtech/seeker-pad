@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { MobileMockup } from '@/components/ui';
+import { RippleButton } from '@/components/ui';
 
 // Mock data
 const launches = [
@@ -114,16 +116,16 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link 
-              href="#launches" 
-              className="btn-glossy px-8 py-4 rounded-2xl font-bold text-white text-lg shadow-lg glow-purple"
-              style={{ transition: 'all 1s ease-in-out' }}
-            >
-              View Launches
-            </Link>
-            <Link href="/nft" className="px-8 py-4 rounded-2xl font-bold text-gray-400 border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all text-lg">
-              Get NFT Access
-            </Link>
+            <RippleButton variant="primary" size="lg">
+              <Link href="#launches" className="text-white">
+                View Launches
+              </Link>
+            </RippleButton>
+            <RippleButton variant="secondary" size="lg">
+              <Link href="/nft" className="text-white">
+                Get NFT Access
+              </Link>
+            </RippleButton>
           </div>
         </div>
       </section>
@@ -139,6 +141,64 @@ export default function Home() {
                   <div className="text-sm text-gray-500">{stat.label}</div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mobile App Preview */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+                Built for <span className="gradient-text">Mobile First</span>
+              </h2>
+              <p className="text-gray-400 text-lg mb-6">
+                Experience SeekerPad natively on your Solana Mobile device. 
+                Discover launches, track portfolios, and never miss an opportunity.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <div className="flex items-center gap-2 text-gray-300">
+                  <span className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">✓</span>
+                  Native mobile experience
+                </div>
+                <div className="flex items-center gap-2 text-gray-300">
+                  <span className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">✓</span>
+                  Push notifications
+                </div>
+                <div className="flex items-center gap-2 text-gray-300">
+                  <span className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">✓</span>
+                  Offline portfolio view
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-center">
+              <MobileMockup>
+                <div className="h-full w-full bg-gradient-to-br from-purple-900/50 to-pink-900/50 p-3 flex flex-col">
+                  <div className="text-center py-4">
+                    <span className="text-white font-bold">SeekerPad</span>
+                  </div>
+                  <div className="space-y-2 flex-1 overflow-hidden">
+                    {launches.slice(0, 3).map((launch) => (
+                      <div key={launch.id} className="bg-white/10 rounded-lg p-2 mx-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
+                          <div>
+                            <div className="text-white text-xs font-medium">{launch.name}</div>
+                            <div className="text-gray-400 text-[10px]">${launch.pricePerToken}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="p-2 text-center">
+                    <div className="inline-block px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-white text-xs font-medium">
+                      View All Launches →
+                    </div>
+                  </div>
+                </div>
+              </MobileMockup>
             </div>
           </div>
         </div>

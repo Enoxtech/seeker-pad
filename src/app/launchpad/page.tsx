@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getLaunches } from '@/data/launches';
 import { Launch } from '@/types';
-import { Badge } from '@/components/ui';
+import { Badge, RippleButton } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 
 // Countdown Timer Component
