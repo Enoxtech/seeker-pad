@@ -68,9 +68,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className={`h-full bg-slate-800 border-r border-slate-700 transition-all duration-300 ease-out flex flex-col ${isExpanded ? 'w-56' : 'w-16'}`}>
           {/* Logo */}
           <div className="h-14 flex items-center border-b border-slate-700 px-3 overflow-hidden">
-            <img src="/seekers.png" alt="SeekerPad" className="h-7 w-7 rounded-lg flex-shrink-0" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center flex-shrink-0">
+              <span className="text-sm">🚀</span>
+            </div>
             <span className={`ml-3 text-white font-bold whitespace-nowrap overflow-hidden transition-opacity duration-200 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
-              Admin
+              SeekerPad
             </span>
           </div>
           
