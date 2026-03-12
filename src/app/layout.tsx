@@ -35,7 +35,7 @@ export default function RootLayout({
               <AuthProvider>
                 <div className="animated-bg min-h-screen flex flex-col">
                   <Header />
-                  <main className="flex-1 pt-20">{children}</main>
+                  <main className="flex-1 pt-14">{children}</main>
                   <Footer />
                   <AIChatWidget />
                 </div>
