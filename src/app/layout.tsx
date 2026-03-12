@@ -1,6 +1,9 @@
+"use client";
+
 import "./globals.css";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/ui/PageTransition";
@@ -22,6 +25,24 @@ export const metadata = {
   },
 };
 
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isAdmin = pathname?.startsWith('/admin');
+  
+  return (
+    <div className={`animated-bg min-h-screen flex flex-col ${isAdmin ? 'bg-slate-900' : ''}`}>
+      {!isAdmin && <Header />}
+      <main className={`flex-1 ${isAdmin ? '' : 'pt-12'}`}>
+        <PageTransition>
+          {children}
+        </PageTransition>
+      </main>
+      {!isAdmin && <Footer />}
+      <AIChatWidget />
+    </div>
+  );
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -34,16 +55,7 @@ export default function RootLayout({
           <WalletAdapterProvider>
             <WalletProvider>
               <AuthProvider>
-                <div className="animated-bg min-h-screen flex flex-col">
-                  <Header />
-                  <main className="flex-1 pt-12">
-                    <PageTransition>
-                      {children}
-                    </PageTransition>
-                  </main>
-                  <Footer />
-                  <AIChatWidget />
-                </div>
+                <LayoutContent>{children}</LayoutContent>
               </AuthProvider>
             </WalletProvider>
           </WalletAdapterProvider>
