@@ -82,25 +82,26 @@ export async function POST(request: Request) {
     }
 
     // Update total raised in launch
-    await supabase.rpc('increment_raised', { 
-      launch_id_param: launchId, 
-      amount_param: amountSol 
-    }).catch(() => {
+    try {
+      await supabase.rpc('increment_raised', { 
+        launch_id_param: launchId, 
+        amount_param: amountSol 
+      });
+    } catch (rpcError) {
       // Fallback: direct update if RPC doesn't exist
-      supabase
+      const { data: launch } = await supabase
         .from('launches')
         .select('total_raised')
         .eq('id', launchId)
-        .single()
-        .then(({ data: launch }) => {
-          if (launch) {
-            supabase
-              .from('launches')
-              .update({ total_raised: launch.total_raised + amountSol })
-              .eq('id', launchId);
-          }
-        });
-    });
+        .single();
+      
+      if (launch) {
+        await supabase
+          .from('launches')
+          .update({ total_raised: launch.total_raised + amountSol })
+          .eq('id', launchId);
+      }
+    }
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
