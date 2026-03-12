@@ -17,7 +17,7 @@ export const metadata = {
   title: "SeekerPad - Solana Mobile Launchpad",
   description: "The premier gateway for discovering and investing in the next generation of Solana Mobile projects",
   icons: {
-    icon: "/seekers.png",
+    icon: "/favicon.ico",
   },
 };
 
@@ -35,7 +35,7 @@ export default function RootLayout({
               <AuthProvider>
                 <div className="animated-bg min-h-screen flex flex-col">
                   <Header />
-                  <main className="flex-1">{children}</main>
+                  <main className="flex-1 pt-16">{children}</main>
                   <Footer />
                   <AIChatWidget />
                 </div>

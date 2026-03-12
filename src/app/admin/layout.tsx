@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -55,16 +55,21 @@ const menuItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-900">
       {/* Collapsible Sidebar */}
-      <div className="fixed left-0 top-0 h-full z-40">
-        <div className="h-full bg-slate-800 border-r border-slate-700 transition-all duration-300 ease-out flex flex-col group hover:w-56 w-16">
+      <div 
+        className="fixed left-0 top-0 h-full z-40"
+        onMouseEnter={() => setIsExpanded(true)}
+        onMouseLeave={() => setIsExpanded(false)}
+      >
+        <div className={`h-full bg-slate-800 border-r border-slate-700 transition-all duration-300 ease-out flex flex-col ${isExpanded ? 'w-56' : 'w-16'}`}>
           {/* Logo */}
           <div className="h-14 flex items-center border-b border-slate-700 px-3 overflow-hidden">
             <img src="/seekers.png" alt="SeekerPad" className="h-7 w-7 rounded-lg flex-shrink-0" />
-            <span className="ml-3 text-white font-bold whitespace-nowrap overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <span className={`ml-3 text-white font-bold whitespace-nowrap overflow-hidden transition-opacity duration-200 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
               Admin
             </span>
           </div>
@@ -85,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   }`}
                 >
                   <div className="flex-shrink-0">{item.icon}</div>
-                  <span className="whitespace-nowrap overflow-hidden transition-all duration-200 opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto">
+                  <span className={`whitespace-nowrap overflow-hidden transition-all duration-200 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
                     {item.name}
                   </span>
                 </Link>
@@ -96,7 +101,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       {/* Main Content */}
-      <main className="ml-16 group-hover:ml-56 p-4 pt-20 transition-all duration-300">
+      <main className={`p-4 pt-20 transition-all duration-300 ${isExpanded ? 'ml-56' : 'ml-16'}`}>
         <div className="max-w-7xl mx-auto">
           {children}
         </div>
