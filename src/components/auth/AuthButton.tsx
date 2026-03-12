@@ -50,7 +50,7 @@ export default function AuthButton() {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="btn-glossy px-4 py-2 rounded-xl text-sm font-semibold text-white"
+        className="btn-glossy px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold text-white"
       >
         Sign In
       </button>

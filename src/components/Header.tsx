@@ -81,7 +81,7 @@ function HeaderContent() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-3">
             {/* Notifications - Only show for logged in users */}
             {isLoggedIn && (
               <div className="relative" ref={notifRef}>
