@@ -701,3 +701,98 @@ body {
   opacity: 0;
   transition: opacity 300ms;
 }
+
+/* ========== 3D Card Tilt Effect ========== */
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+.card-3d:hover {
+  transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) translateZ(5px);
+}
+
+/* ========== Glowing Border Animation ========== */
+.glow-border {
+  position: relative;
+}
+.glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(45deg, #9333ea, #ec4899, #22d3ee, #9333ea);
+  background-size: 300% 300%;
+  animation: glow-shift 3s ease infinite;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.glow-border:focus-within::before,
+.glow-border:hover::before {
+  opacity: 1;
+}
+@keyframes glow-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ========== Button Micro-animations ========== */
+.btn-press {
+  transform: scale(1);
+  transition: transform 0.1s ease;
+}
+.btn-press:active {
+  transform: scale(0.96);
+}
+
+/* Ripple effect */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+.ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+  transform: scale(0);
+  opacity: 0;
+}
+.ripple:active::after {
+  transform: scale(2);
+  opacity: 1;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+/* Pulse animation for focus states */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(147, 51, 234, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(147, 51, 234, 0.6); }
+}
+.pulse-glow:focus {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ========== Loading Spinner ========== */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== Glass Enhancement ========== */
+.glass-enhanced {
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+[data-theme="light"] .glass-enhanced {
+  background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.5) 100%);
+  border: 1px solid rgba(147, 51, 234, 0.15);
+}

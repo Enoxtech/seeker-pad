@@ -33,13 +33,13 @@ export default function MicroButton({
   return (
     <button
       className={`
+        btn-press ripple
         ${variants[variant]}
         ${sizes[size]}
         rounded-xl font-medium
         transition-all duration-200
-        active:scale-95 active:brightness-90
         hover:shadow-lg hover:shadow-purple-500/20
-        ${glow ? 'animate-pulse-glow' : ''}
+        ${glow ? 'pulse-glow' : ''}
         ${className}
       `}
       {...props}
@@ -62,11 +62,11 @@ export function IconButton({
   return (
     <button
       className={`
+        btn-press
         p-2 rounded-lg
         text-white/70 hover:text-white
         bg-white/5 hover:bg-white/10
         transition-all duration-200
-        active:scale-90
         hover:rotate-12
         ${className}
       `}
