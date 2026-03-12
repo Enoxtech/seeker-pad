@@ -70,7 +70,7 @@ function HeaderContent() {
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-600/30 float">
               <span className="text-base sm:text-xl">🚀</span>
             </div>
-            <span className="text-lg sm:text-xl font-bold text-white group-hover:gradient-text transition-all hidden xs:block">SeekerPad</span>
+            <span className="text-lg sm:text-xl font-bold text-white group-hover:gradient-text transition-transform duration-300 hover:scale-105 hidden xs:block">SeekerPad</span>
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">
