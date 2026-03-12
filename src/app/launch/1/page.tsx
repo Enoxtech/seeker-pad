@@ -100,7 +100,7 @@ export default function LaunchDetail() {
                 <h2 className="text-xl font-bold text-white">Sale Progress</h2>
                 <span className="text-2xl font-bold gradient-text">{launch.progress}%</span>
               </div>
-              <div className="h-4 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-4 bg-white/10 rounded-full overflow-hidden progress-bar">
                 <div 
                   className="h-full bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 rounded-full transition-all"
                   style={{ width: `${launch.progress}%` }}

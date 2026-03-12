@@ -337,6 +337,24 @@ body {
   50% { opacity: 0.7; }
 }
 
+/* Keyframes */
+@keyframes ripple {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+@keyframes wallet-connect {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes wallet-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.7); }
+  70% { box-shadow: 0 0 0 15px rgba(147, 51, 234, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(147, 51, 234, 0); }
+}
+
 /* Float Animation */
 @keyframes float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -352,6 +370,20 @@ body {
 .float-slow {
   animation: float 8s ease-in-out infinite;
   animation-delay: 1s;
+}
+
+/* Ripple Effect */
+.animate-ripple {
+  animation: ripple 0.6s ease-out forwards;
+}
+
+/* Wallet Connection Animation */
+.wallet-connecting {
+  animation: wallet-connect 0.5s ease-out forwards;
+}
+
+.wallet-pulse {
+  animation: wallet-pulse 1.5s ease-out infinite;
 }
 
 /* Glow Effects */
@@ -795,4 +827,119 @@ body {
 [data-theme="light"] .glass-enhanced {
   background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.5) 100%);
   border: 1px solid rgba(147, 51, 234, 0.15);
+}
+
+/* ========== Animated Gradient Background ========== */
+.gradient-animate {
+  background: linear-gradient(-45deg, #9333ea, #ec4899, #22d3ee, #9333ea);
+  background-size: 400% 400%;
+  animation: gradient-shift 8s ease infinite;
+}
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ========== Floating Particles (CSS-only) ========== */
+.particles {
+  position: relative;
+  overflow: hidden;
+}
+.particles::before,
+.particles::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(147, 51, 234, 0.3);
+  border-radius: 50%;
+  animation: float 6s ease-in-out infinite;
+}
+.particles::before {
+  top: 20%;
+  left: 10%;
+  animation-delay: 0s;
+}
+.particles::after {
+  top: 60%;
+  right: 15%;
+  animation-delay: -3s;
+  width: 6px;
+  height: 6px;
+  background: rgba(236, 72, 153, 0.3);
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
+}
+
+/* ========== Card Hover Glow ========== */
+.card-glow {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.card-glow:hover {
+  box-shadow: 0 0 30px rgba(147, 51, 234, 0.3), 0 0 60px rgba(236, 72, 153, 0.1);
+  transform: translateY(-2px);
+}
+
+/* ========== Animated Progress Bar ========== */
+.progress-bar {
+  position: relative;
+  overflow: hidden;
+}
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: progress-shimmer 2s infinite;
+}
+@keyframes progress-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ========== Skeleton Shimmer ========== */
+.skeleton {
+  background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ========== Live Indicator ========== */
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+/* ========== Tier Badges ========== */
+.badge-elite {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #78350f;
+}
+.badge-gem {
+  background: linear-gradient(135deg, #22d3ee, #06b6d4);
+  color: #164e63;
+}
+.badge-potential {
+  background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+  color: #4c1d95;
 }

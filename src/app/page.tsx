@@ -87,7 +87,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen pt-24 page-enter">
+    <div className="min-h-screen pt-24 page-enter particles">
       {/* Hero */}
       <section className="relative py-20 lg:py-32 px-4 overflow-hidden">
         {/* Floating Orbs */}

@@ -62,7 +62,7 @@ export default function Portfolio() {
 
   if (!wallet.connected) {
     return (
-      <div className="min-h-screen pt-24 pb-16 page-enter">
+      <div className="min-h-screen pt-24 pb-16 page-enter particles">
         <div className="max-w-5xl mx-auto px-4">
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-8">Portfolio</h1>
           
@@ -77,7 +77,7 @@ export default function Portfolio() {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-16 page-enter">
+    <div className="min-h-screen pt-24 pb-16 page-enter particles">
       <div className="max-w-5xl mx-auto px-4">
         <h1 className="text-3xl sm:text-4xl font-bold text-white mb-8">Portfolio</h1>
 

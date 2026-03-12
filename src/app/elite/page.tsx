@@ -15,7 +15,7 @@ const benefits = [
 
 export default function Elite() {
   return (
-    <div className="min-h-screen pt-24 pb-16 page-enter">
+    <div className="min-h-screen pt-24 pb-16 page-enter particles">
       <section className="relative py-20 px-4 overflow-hidden">
         <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[100px]" />
         
@@ -75,7 +75,12 @@ export default function Elite() {
                         </div>
                       </div>
                     </div>
-                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-400 border border-green-500/30">
+                    <span className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${
+                      launch.status === 'live' 
+                        ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                        : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                    }`}>
+                      {launch.status === 'live' && <span className="live-dot" />}
                       {launch.status.toUpperCase()}
                     </span>
                   </div>
