@@ -60,9 +60,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-slate-900">
-      {/* Collapsible Sidebar */}
+      {/* Collapsible Sidebar - Desktop Only */}
       <div 
-        className="fixed left-0 top-0 h-full z-40"
+        className="fixed left-0 top-0 h-full z-40 hidden lg:block"
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
       >
@@ -103,8 +103,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
 
-      {/* Main Content */}
-      <main className={`p-4 pt-20 pb-24 transition-all duration-300 ${isExpanded ? 'lg:ml-56' : 'lg:ml-16'}`}>
+      {/* Main Content - margin only on desktop where sidebar shows */}
+      <main className="p-4 pt-16 pb-24 lg:pb-4 transition-all duration-300 lg:ml-16">
         <div className="max-w-7xl mx-auto">
           {children}
         </div>
