@@ -386,6 +386,19 @@ body {
   animation: wallet-pulse 1.5s ease-out infinite;
 }
 
+/* Mobile Mockup Carousel */
+@keyframes carousel-slide {
+  0%, 20% { transform: translateX(0); }
+  25%, 45% { transform: translateX(-100%); }
+  50%, 70% { transform: translateX(-200%); }
+  75%, 95% { transform: translateX(-300%); }
+  100% { transform: translateX(0); }
+}
+
+.mobile-carousel {
+  animation: carousel-slide 12s ease-in-out infinite;
+}
+
 /* Glow Effects */
 .glow-purple {
   box-shadow: 

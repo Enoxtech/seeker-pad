@@ -175,27 +175,100 @@ export default function Home() {
             </div>
             <div className="flex justify-center">
               <MobileMockup>
-                <div className="h-full w-full bg-gradient-to-br from-purple-900/50 to-pink-900/50 p-3 flex flex-col">
-                  <div className="text-center py-4">
-                    <span className="text-white font-bold">SeekerPad</span>
-                  </div>
-                  <div className="space-y-2 flex-1 overflow-hidden">
-                    {launches.slice(0, 3).map((launch) => (
-                      <div key={launch.id} className="bg-white/10 rounded-lg p-2 mx-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
-                          <div>
-                            <div className="text-white text-xs font-medium">{launch.name}</div>
-                            <div className="text-gray-400 text-[10px]">${launch.pricePerToken}</div>
+                <div className="h-full w-full relative overflow-hidden">
+                  {/* Animated Screen Carousel */}
+                  <div className="absolute inset-0 flex mobile-carousel">
+                    {/* Screen 1: Launches */}
+                    <div className="w-full h-full flex-shrink-0 p-3 flex flex-col bg-gradient-to-br from-purple-900/50 to-pink-900/50">
+                      <div className="text-center py-3">
+                        <span className="text-white font-bold text-sm">🔥 Live Launches</span>
+                      </div>
+                      <div className="space-y-2 flex-1 overflow-hidden">
+                        {launches.slice(0, 3).map((launch) => (
+                          <div key={launch.id} className="bg-white/10 rounded-lg p-2 mx-1">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
+                                <div>
+                                  <div className="text-white text-xs font-medium">{launch.name}</div>
+                                  <div className="text-gray-400 text-[10px]">${launch.pricePerToken}</div>
+                                </div>
+                              </div>
+                              <span className="text-green-400 text-[10px]">● LIVE</span>
+                            </div>
                           </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Screen 2: Portfolio */}
+                    <div className="w-full h-full flex-shrink-0 p-3 flex flex-col bg-gradient-to-br from-blue-900/50 to-cyan-900/50">
+                      <div className="text-center py-3">
+                        <span className="text-white font-bold text-sm">💼 My Portfolio</span>
+                      </div>
+                      <div className="bg-white/10 rounded-lg p-3 mx-1 mb-2">
+                        <div className="text-gray-400 text-[10px]">Total Value</div>
+                        <div className="text-white text-xl font-bold">$12,450.00</div>
+                        <div className="text-green-400 text-xs">+24.5% all time</div>
+                      </div>
+                      <div className="space-y-1.5 flex-1">
+                        {['SOL', 'BONK', 'WEN'].map((token) => (
+                          <div key={token} className="bg-white/5 rounded-lg p-2 mx-1 flex justify-between items-center">
+                            <span className="text-white text-xs">{token}</span>
+                            <span className="text-purple-400 text-xs font-medium">+$0.00</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Screen 3: NFT Access */}
+                    <div className="w-full h-full flex-shrink-0 p-3 flex flex-col bg-gradient-to-br from-orange-900/50 to-red-900/50">
+                      <div className="text-center py-3">
+                        <span className="text-white font-bold text-sm">🎫 NFT Access</span>
+                      </div>
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl p-4 text-center w-4/5">
+                          <div className="text-3xl mb-2">🔐</div>
+                          <div className="text-white text-xs font-bold">Elite Pass</div>
+                          <div className="text-white/70 text-[10px]">Tier 1 Access</div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                  <div className="p-2 text-center">
-                    <div className="inline-block px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-white text-xs font-medium">
-                      View All Launches →
+                      <div className="text-center text-gray-400 text-[10px]">
+                        3 Launches Eligible
+                      </div>
                     </div>
+
+                    {/* Screen 4: Elite Launches */}
+                    <div className="w-full h-full flex-shrink-0 p-3 flex flex-col bg-gradient-to-br from-amber-900/50 to-yellow-900/50">
+                      <div className="text-center py-3">
+                        <span className="text-white font-bold text-sm">⭐ Elite Launches</span>
+                      </div>
+                      <div className="bg-gradient-to-r from-amber-500/30 to-yellow-500/30 rounded-lg p-3 mx-1 border border-amber-500/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500" />
+                          <div>
+                            <div className="text-white text-sm font-bold">Super Token</div>
+                            <div className="text-amber-400 text-[10px]">★ ELITE</div>
+                          </div>
+                        </div>
+                        <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                          <div className="h-full w-3/4 bg-gradient-to-r from-amber-500 to-yellow-500" />
+                        </div>
+                        <div className="text-gray-400 text-[10px] mt-1">75% filled</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Carousel Indicators */}
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div 
+                        key={i}
+                        className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                          i === 0 ? 'bg-white w-4' : 'bg-white/40'
+                        }`}
+                      />
+                    ))}
                   </div>
                 </div>
               </MobileMockup>
