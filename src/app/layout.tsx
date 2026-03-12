@@ -3,6 +3,7 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import dynamic from 'next/dynamic';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PageTransition from "@/components/ui/PageTransition";
 import { ThemeProvider } from "@/components/ThemeSwitch/ThemeProvider";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import AIChatWidget from "@/components/AIChatWidget";
@@ -35,7 +36,11 @@ export default function RootLayout({
               <AuthProvider>
                 <div className="animated-bg min-h-screen flex flex-col">
                   <Header />
-                  <main className="flex-1 pt-12">{children}</main>
+                  <main className="flex-1 pt-12">
+                    <PageTransition>
+                      {children}
+                    </PageTransition>
+                  </main>
                   <Footer />
                   <AIChatWidget />
                 </div>

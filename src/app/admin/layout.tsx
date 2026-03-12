@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import MobileAdminNav from '@/components/ui/MobileAdminNav';
 
 const menuItems = [
   { name: 'Dashboard', href: '/admin', icon: (
@@ -103,11 +104,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       {/* Main Content */}
-      <main className={`p-4 pt-20 transition-all duration-300 ${isExpanded ? 'ml-56' : 'ml-16'}`}>
+      <main className={`p-4 pt-20 pb-24 transition-all duration-300 ${isExpanded ? 'lg:ml-56' : 'lg:ml-16'}`}>
         <div className="max-w-7xl mx-auto">
           {children}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileAdminNav />
     </div>
   );
 }
