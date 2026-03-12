@@ -103,7 +103,7 @@ function HeaderContent() {
                 </button>
 
                 {notificationsOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 crystal-card rounded-xl overflow-hidden animate-float shadow-xl">
+                  <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 crystal-card rounded-xl overflow-hidden animate-scale-in shadow-xl">
                     <div className="p-3 sm:p-4 border-b border-white/10">
                       <h3 className="text-white font-bold text-sm sm:text-base">Notifications</h3>
                     </div>

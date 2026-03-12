@@ -9,23 +9,29 @@ interface PageTransitionProps {
 
 export default function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname();
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [displayChildren, setDisplayChildren] = useState(children);
-  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    // Trigger bounce animation on route change
-    setIsAnimating(true);
-    setDisplayChildren(children);
+    // Start transition
+    setIsTransitioning(true);
     
+    // Small delay for exit animation
     const timer = setTimeout(() => {
-      setIsAnimating(false);
-    }, 500);
+      setDisplayChildren(children);
+      setIsTransitioning(false);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [pathname, children]);
 
   return (
-    <div className={isAnimating ? 'animate-bounce-in' : ''}>
+    <div 
+      className={`
+        transition-all duration-300 ease-out
+        ${isTransitioning ? 'opacity-0 translate-x-4' : 'opacity-100 translate-x-0'}
+      `}
+    >
       {displayChildren}
     </div>
   );
