@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { useWallet as useSolanaWallet, useConnection, PhantomWalletName } from '@solana/wallet-adapter-react';
+import { useWallet as useSolanaWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 export interface WalletState {
@@ -57,7 +57,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const openWalletModal = () => {
     // Trigger the wallet adapter's built-in modal by calling connect
-    select(PhantomWalletName);
+    select('Phantom' as any);
     connect();
   };
 
