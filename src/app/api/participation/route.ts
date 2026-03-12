@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// Mock participations storage
-const mockParticipations: any[] = [];
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Get user's participations
 export async function GET(
@@ -11,10 +13,18 @@ export async function GET(
   try {
     const { address } = await params;
     
-    // Filter mock data for this user
-    const userParticipations = mockParticipations.filter(p => p.userAddress === address);
-    
-    return NextResponse.json(userParticipations);
+    const { data, error } = await supabase
+      .from('participations')
+      .select('*')
+      .eq('user_address', address)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data || []);
   } catch (error) {
     console.error('Error fetching participations:', error);
     return NextResponse.json({ error: 'Failed to fetch participations' }, { status: 500 });
@@ -37,25 +47,62 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
     }
     
-    // Calculate tokens received (simplified)
-    const tokensReceived = Math.floor(amountSol * 1000); // 1 SOL = 1000 tokens
+    // Get launch price to calculate tokens
+    const { data: launch, error: launchError } = await supabase
+      .from('launches')
+      .select('launch_price')
+      .eq('id', launchId)
+      .single();
     
-    const newParticipation = {
-      id: Date.now().toString(),
-      launchId,
-      userAddress,
-      amountSol,
-      tokensReceived,
-      status: 'pending',
-      claimedAmount: 0,
-      txSignature,
-      createdAt: new Date().toISOString(),
-    };
+    if (launchError || !launch) {
+      return NextResponse.json({ error: 'Launch not found' }, { status: 404 });
+    }
     
-    // Store in mock (in production: Supabase)
-    mockParticipations.push(newParticipation);
+    // Calculate tokens received
+    const tokensReceived = Math.floor(amountSol / launch.launch_price);
     
-    return NextResponse.json(newParticipation, { status: 201 });
+    const { data, error } = await supabase
+      .from('participations')
+      .insert([{
+        launch_id: launchId,
+        user_address: userAddress,
+        amount_sol: amountSol,
+        tokens_received: tokensReceived,
+        status: 'pending',
+        claimed_amount: 0,
+        tx_signature: txSignature,
+        created_at: new Date().toISOString(),
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Update total raised in launch
+    await supabase.rpc('increment_raised', { 
+      launch_id_param: launchId, 
+      amount_param: amountSol 
+    }).catch(() => {
+      // Fallback: direct update if RPC doesn't exist
+      supabase
+        .from('launches')
+        .select('total_raised')
+        .eq('id', launchId)
+        .single()
+        .then(({ data: launch }) => {
+          if (launch) {
+            supabase
+              .from('launches')
+              .update({ total_raised: launch.total_raised + amountSol })
+              .eq('id', launchId);
+          }
+        });
+    });
+
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error('Error creating participation:', error);
     return NextResponse.json({ error: 'Failed to create participation' }, { status: 500 });

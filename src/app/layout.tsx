@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeSwitch/ThemeProvider";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import AIChatWidget from "@/components/AIChatWidget";
+import { WalletProvider } from "@/components/wallet/WalletContext";
 
 const WalletAdapterProvider = dynamic(
   () => import('@/components/wallet/WalletAdapterProvider').then(mod => mod.default),
@@ -30,14 +31,16 @@ export default function RootLayout({
       <body className="min-h-screen noise">
         <ThemeProvider>
           <WalletAdapterProvider>
-            <AuthProvider>
-              <div className="animated-bg min-h-screen flex flex-col">
-                <Header />
-                <main className="flex-1">{children}</main>
-                <Footer />
-                <AIChatWidget />
-              </div>
-            </AuthProvider>
+            <WalletProvider>
+              <AuthProvider>
+                <div className="animated-bg min-h-screen flex flex-col">
+                  <Header />
+                  <main className="flex-1">{children}</main>
+                  <Footer />
+                  <AIChatWidget />
+                </div>
+              </AuthProvider>
+            </WalletProvider>
           </WalletAdapterProvider>
         </ThemeProvider>
       </body>

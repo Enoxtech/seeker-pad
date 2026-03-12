@@ -1,71 +1,24 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// Mock data for development
-const mockLaunches = [
-  {
-    id: '1',
-    name: 'Bonkify',
-    symbol: 'BKFY',
-    description: 'Mobile-first meme coin trading platform built specifically for Seeker and Saga users.',
-    type: 'elite',
-    status: 'live',
-    totalSupply: 5000000000,
-    launchPrice: 0.001,
-    raiseTarget: 2000000,
-    totalRaised: 1560000,
-    startTime: new Date('2025-03-25T14:00:00Z'),
-    endTime: new Date('2025-03-25T20:00:00Z'),
-    minAllocation: 0.1,
-    maxAllocation: 5,
-    logoUrl: '',
-    websiteUrl: 'https://bonkify.io',
-    twitterUrl: 'https://twitter.com/bonkify',
-    telegramUrl: 'https://t.me/bonkify',
-  },
-  {
-    id: '2',
-    name: 'SolanaSaga Phone',
-    symbol: 'SAGA',
-    description: 'Experience the future of blockchain with the next generation blockchain phone.',
-    type: 'standard',
-    status: 'upcoming',
-    totalSupply: 1000000000,
-    launchPrice: 0.005,
-    raiseTarget: 5000000,
-    totalRaised: 0,
-    startTime: new Date('2025-04-01T14:00:00Z'),
-    endTime: new Date('2025-04-07T20:00:00Z'),
-    minAllocation: 1,
-    maxAllocation: 50,
-    logoUrl: '',
-    websiteUrl: 'https://saga.com',
-    twitterUrl: 'https://twitter.com/saga',
-    telegramUrl: 'https://t.me/saga',
-  },
-  {
-    id: '3',
-    name: 'SeekerX',
-    symbol: 'SKRX',
-    description: 'DeFi suite built for the Seeker ecosystem',
-    type: 'elite',
-    status: 'ended',
-    totalSupply: 100000000,
-    launchPrice: 0.01,
-    raiseTarget: 1000000,
-    totalRaised: 1000000,
-    startTime: new Date('2025-03-20T14:00:00Z'),
-    endTime: new Date('2025-03-22T20:00:00Z'),
-    minAllocation: 0.5,
-    maxAllocation: 10,
-  }
-];
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Get all launches
 export async function GET() {
   try {
-    // For now, return mock data
-    // In production, this would query Supabase
-    return NextResponse.json(mockLaunches);
+    const { data, error } = await supabase
+      .from('launches')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data || []);
   } catch (error) {
     console.error('Error fetching launches:', error);
     return NextResponse.json({ error: 'Failed to fetch launches' }, { status: 500 });
@@ -78,22 +31,42 @@ export async function POST(request: Request) {
     const body = await request.json();
     
     // Validate required fields
-    const { name, symbol, totalSupply, launchPrice, startTime, endTime } = body;
-    if (!name || !symbol || !totalSupply || !launchPrice || !startTime || !endTime) {
+    const { name, symbol, total_supply, launch_price, start_time, end_time } = body;
+    if (!name || !symbol || !total_supply || !launch_price || !start_time || !end_time) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
-    // In production: Insert into Supabase
-    const newLaunch = {
-      id: Date.now().toString(),
-      ...body,
-      status: 'upcoming',
-      totalRaised: 0,
-      participantsCount: 0,
-      createdAt: new Date().toISOString(),
-    };
-    
-    return NextResponse.json(newLaunch, { status: 201 });
+    const { data, error } = await supabase
+      .from('launches')
+      .insert([{
+        name,
+        symbol,
+        description: body.description || '',
+        logo_url: body.logo_url || '',
+        website_url: body.website_url || '',
+        twitter_url: body.twitter_url || '',
+        telegram_url: body.telegram_url || '',
+        type: body.type || 'standard',
+        status: 'upcoming',
+        total_supply,
+        launch_price,
+        raise_target: body.raise_target || null,
+        total_raised: 0,
+        min_allocation: body.min_allocation || null,
+        max_allocation: body.max_allocation || null,
+        start_time,
+        end_time,
+        created_at: new Date().toISOString(),
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error('Error creating launch:', error);
     return NextResponse.json({ error: 'Failed to create launch' }, { status: 500 });

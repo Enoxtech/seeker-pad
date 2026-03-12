@@ -1,56 +1,9 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// Mock data
-const mockLaunches = [
-  {
-    id: '1',
-    name: 'Bonkify',
-    symbol: 'BKFY',
-    description: 'Mobile-first meme coin trading platform',
-    type: 'elite',
-    status: 'live',
-    totalSupply: 5000000000,
-    launchPrice: 0.001,
-    raiseTarget: 2000000,
-    totalRaised: 1560000,
-    startTime: new Date('2025-03-25T14:00:00Z'),
-    endTime: new Date('2025-03-25T20:00:00Z'),
-    minAllocation: 0.1,
-    maxAllocation: 5,
-  },
-  {
-    id: '2',
-    name: 'SolanaSaga Phone',
-    symbol: 'SAGA',
-    description: 'The next generation blockchain phone',
-    type: 'standard',
-    status: 'upcoming',
-    totalSupply: 1000000000,
-    launchPrice: 0.005,
-    raiseTarget: 5000000,
-    totalRaised: 0,
-    startTime: new Date('2025-04-01T14:00:00Z'),
-    endTime: new Date('2025-04-07T20:00:00Z'),
-    minAllocation: 1,
-    maxAllocation: 50,
-  },
-  {
-    id: '3',
-    name: 'SeekerX',
-    symbol: 'SKRX',
-    description: 'DeFi suite built for the Seeker ecosystem',
-    type: 'elite',
-    status: 'ended',
-    totalSupply: 100000000,
-    launchPrice: 0.01,
-    raiseTarget: 1000000,
-    totalRaised: 1000000,
-    startTime: new Date('2025-03-20T14:00:00Z'),
-    endTime: new Date('2025-03-22T20:00:00Z'),
-    minAllocation: 0.5,
-    maxAllocation: 10,
-  }
-];
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Get single launch by ID
 export async function GET(
@@ -59,13 +12,22 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const launch = mockLaunches.find(l => l.id === id);
     
-    if (!launch) {
-      return NextResponse.json({ error: 'Launch not found' }, { status: 404 });
+    const { data, error } = await supabase
+      .from('launches')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Launch not found' }, { status: 404 });
+      }
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
-    return NextResponse.json(launch);
+
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching launch:', error);
     return NextResponse.json({ error: 'Failed to fetch launch' }, { status: 500 });
@@ -87,10 +49,19 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
     
-    // In production: Update Supabase
-    // await supabase.from('launches').update({ status }).eq('id', id);
-    
-    return NextResponse.json({ id, status, message: 'Launch status updated' });
+    const { data, error } = await supabase
+      .from('launches')
+      .update({ status })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase update error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ id, status: data.status, message: 'Launch status updated' });
   } catch (error) {
     console.error('Error updating launch:', error);
     return NextResponse.json({ error: 'Failed to update launch' }, { status: 500 });

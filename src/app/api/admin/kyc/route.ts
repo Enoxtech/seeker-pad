@@ -4,11 +4,14 @@ import { createClient } from '@supabase/supabase-js';
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
+  if (!url || !key) {
+    console.error('Missing Supabase credentials');
+    return null;
+  }
   return createClient(url, key);
 }
 
-// Mock KYC data
+// Mock KYC data fallback
 const mockKYC = [
   { id: '1', wallet_address: '7xKXtg2CW8YHZr2K3vLkLqGqXDhV3m', email: 'user1@example.com', status: 'approved', document_type: 'passport', submitted_at: '2026-03-01' },
   { id: '2', wallet_address: '9aZKTtbD7mBnK9hL5nCpQ8rT', email: 'user2@example.com', status: 'approved', document_type: 'national_id', submitted_at: '2026-03-02' },
@@ -19,17 +22,24 @@ export async function GET() {
   try {
     const supabase = getSupabase();
     if (!supabase) {
+      console.log('No Supabase client, returning mock data');
       return NextResponse.json(mockKYC);
     }
-    const { data, error } = await supabase
-      .from('kyc')
-      .select('*')
-      .order('submitted_at', { ascending: false });
     
-    if (error) throw error;
+    // Use correct table name: kyc_applications
+    const { data, error } = await supabase
+      .from('kyc_applications')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Supabase error:', error.message);
+      return NextResponse.json(mockKYC);
+    }
+    
     return NextResponse.json(data || mockKYC);
   } catch (error) {
-    console.error('Error fetching KYC, using mock data:', error);
+    console.error('Error fetching KYC:', error);
     return NextResponse.json(mockKYC);
   }
 }

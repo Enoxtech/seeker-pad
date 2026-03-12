@@ -1,6 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { useWallet as useSolanaWallet, useConnection } from '@solana/wallet-adapter-react';
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 export interface WalletState {
   connected: boolean;
@@ -11,77 +13,60 @@ export interface WalletState {
 
 interface WalletContextType {
   wallet: WalletState;
-  connect: (walletName?: string) => Promise<void>;
-  disconnect: () => Promise<void>;
+  connect: () => void;
+  disconnect: () => void;
   isConnecting: boolean;
+  openWalletModal: () => void;
 }
 
 const WalletContext = createContext<WalletContextType | null>(null);
 
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const [wallet, setWallet] = useState<WalletState>({
-    connected: false,
-    publicKey: null,
-    balance: null,
-    wallet: null,
-  });
+  const { connection } = useConnection();
+  const { publicKey, connected, connecting, connect, disconnect: disconnectAdapter, select } = useSolanaWallet();
+  const [balance, setBalance] = useState<number | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Load wallet state from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem('walletState');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setWallet(parsed);
-      } catch (e) {
-        console.error('Failed to parse wallet state');
-      }
+  const fetchBalance = useCallback(async (pubKey: PublicKey) => {
+    try {
+      const bal = await connection.getBalance(pubKey);
+      setBalance(bal / LAMPORTS_PER_SOL);
+    } catch (e) {
+      console.error('Failed to fetch balance:', e);
+      setBalance(null);
     }
-  }, []);
+  }, [connection]);
 
-  // Save wallet state to localStorage
+  // Update wallet state when real wallet changes
   useEffect(() => {
-    if (wallet.connected) {
-      localStorage.setItem('walletState', JSON.stringify(wallet));
-    } else {
-      localStorage.removeItem('walletState');
+    if (connected && publicKey) {
+      fetchBalance(publicKey);
+      setIsConnecting(false);
+    } else if (!connected && !connecting) {
+      setBalance(null);
     }
-  }, [wallet]);
+    setIsConnecting(connecting);
+  }, [connected, publicKey, connecting, fetchBalance]);
 
-  const connect = async (walletName: string = 'Phantom') => {
-    setIsConnecting(true);
-    
-    // Simulate connection delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Generate mock wallet data
-    const mockPublicKey = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
-    const mockBalance = 12.5 + Math.random() * 10;
-    
-    setWallet({
-      connected: true,
-      publicKey: mockPublicKey,
-      balance: mockBalance,
-      wallet: walletName,
-    });
-    setIsConnecting(false);
+  const wallet: WalletState = {
+    connected,
+    publicKey: publicKey?.toBase58() || null,
+    balance,
+    wallet: connected ? 'Phantom' : null,
+  };
+
+  const openWalletModal = () => {
+    // Trigger the wallet adapter's built-in modal by calling connect
+    select('Phantom');
+    connect();
   };
 
   const disconnect = async () => {
-    setIsConnecting(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setWallet({
-      connected: false,
-      publicKey: null,
-      balance: null,
-      wallet: null,
-    });
-    setIsConnecting(false);
+    disconnectAdapter();
   };
 
   return (
-    <WalletContext.Provider value={{ wallet, connect, disconnect, isConnecting }}>
+    <WalletContext.Provider value={{ wallet, connect: openWalletModal, disconnect, isConnecting, openWalletModal }}>
       {children}
     </WalletContext.Provider>
   );
