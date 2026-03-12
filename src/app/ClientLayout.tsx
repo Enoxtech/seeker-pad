@@ -28,7 +28,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         </PageTransition>
       </main>
       {!isAdmin && <Footer />}
-      <AIChatWidget />
+      {!isAdmin && <AIChatWidget />}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -40,53 +41,105 @@ const navItems = [
       </svg>
     )
   },
-  { 
-    href: '/admin/settings', 
-    label: 'More', 
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    )
-  },
+];
+
+const moreItems = [
+  { href: '/admin/analytics', label: 'Analytics', icon: '📊' },
+  { href: '/admin/kyc', label: 'KYC', icon: '✓' },
+  { href: '/admin/notifications', label: 'Notifications', icon: '🔔' },
+  { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
+  { href: '/admin/audit-logs', label: 'Audit Logs', icon: '📋' },
 ];
 
 export default function MobileAdminNav() {
   const pathname = usePathname();
+  const [showMore, setShowMore] = useState(false);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-slate-800/95 backdrop-blur-lg border-t border-slate-700 pb-safe">
-      <div className="flex items-center justify-around py-2">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || 
-            (item.href !== '/admin' && pathname?.startsWith(item.href));
+    <>
+      <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-slate-800/95 backdrop-blur-lg border-t border-slate-700 pb-safe">
+        <div className="flex items-center justify-around py-2">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || 
+              (item.href !== '/admin' && pathname?.startsWith(item.href));
+            
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`
+                  flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all duration-200
+                  min-w-[56px] min-h-[44px]
+                  ${isActive 
+                    ? 'text-cyan-400' 
+                    : 'text-slate-400 hover:text-slate-200'
+                  }
+                `}
+              >
+                <div className={`transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
+                  {item.icon}
+                </div>
+                <span className={`text-xs font-medium ${isActive ? 'text-cyan-400' : ''}`}>
+                  {item.label}
+                </span>
+                {isActive && (
+                  <div className="absolute -bottom-0 w-8 h-0.5 bg-cyan-400 rounded-full" />
+                )}
+              </Link>
+            );
+          })}
           
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`
-                flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200
-                min-w-[60px] min-h-[44px]
-                ${isActive 
-                  ? 'text-cyan-400' 
-                  : 'text-slate-400 hover:text-slate-200'
-                }
-              `}
-            >
-              <div className={`transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
-                {item.icon}
-              </div>
-              <span className={`text-xs font-medium ${isActive ? 'text-cyan-400' : ''}`}>
-                {item.label}
-              </span>
-              {isActive && (
-                <div className="absolute -bottom-0 w-8 h-0.5 bg-cyan-400 rounded-full" />
-              )}
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+          {/* More Dropdown Button */}
+          <button
+            onClick={() => setShowMore(!showMore)}
+            className={`
+              flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all duration-200
+              min-w-[56px] min-h-[44px]
+              ${showMore 
+                ? 'text-cyan-400' 
+                : 'text-slate-400 hover:text-slate-200'
+              }
+            `}
+          >
+            <div className={`transition-transform duration-200 ${showMore ? 'scale-110' : ''}`}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </div>
+            <span className="text-xs font-medium">More</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* More Dropdown Menu */}
+      {showMore && (
+        <div className="fixed bottom-16 left-0 right-0 z-40 lg:hidden bg-slate-800/95 backdrop-blur-lg border-t border-slate-700 py-2 px-4">
+          <div className="grid grid-cols-5 gap-1">
+            {moreItems.map((item) => {
+              const isActive = pathname === item.href || 
+                (item.href !== '/admin' && pathname?.startsWith(item.href));
+              
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setShowMore(false)}
+                  className={`
+                    flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200
+                    ${isActive 
+                      ? 'text-cyan-400 bg-cyan-400/10' 
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                    }
+                  `}
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  <span className="text-xs font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
