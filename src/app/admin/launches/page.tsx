@@ -118,8 +118,8 @@ export default function AdminLaunches() {
       </div>
 
       {/* Launches Table */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-        <table className="w-full">
+      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-x-auto">
+        <table className="w-full min-w-[600px]">
           <thead className="bg-slate-700/50">
             <tr>
               <th className="text-left p-4 text-slate-400 text-sm font-medium">Project</th>
