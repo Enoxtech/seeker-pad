@@ -48,7 +48,7 @@ const moreItems = [
   { href: '/admin/kyc', label: 'KYC', icon: '✓' },
   { href: '/admin/notifications', label: 'Notifications', icon: '🔔' },
   { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
-  { href: '/admin/audit-logs', label: 'Audit Logs', icon: '📋' },
+  { href: '/admin/logs', label: 'Audit Logs', icon: '📋' },
 ];
 
 export default function MobileAdminNav() {

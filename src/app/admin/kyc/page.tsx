@@ -78,9 +78,9 @@ export default function AdminKYC() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold text-white">KYC Verification</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {['all', 'pending', 'approved', 'rejected'].map(f => (
             <button
               key={f}
@@ -95,9 +95,9 @@ export default function AdminKYC() {
         </div>
       </div>
 
-      {/* KYC Table */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-        <table className="w-full">
+      {/* KYC Table - responsive */}
+      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-x-auto">
+        <table className="w-full min-w-[600px]">
           <thead className="bg-slate-700/50">
             <tr>
               <th className="text-left p-4 text-slate-400 text-sm font-medium">Wallet</th>
