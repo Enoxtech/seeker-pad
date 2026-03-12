@@ -28,7 +28,7 @@ export default function WalletButton() {
     <button
       onClick={openWalletModal}
       disabled={isConnecting}
-      className="btn-glossy px-2 py-1 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold text-white shadow-lg glow-purple disabled:opacity-50"
+      className="btn-glossy !p-1 !text-xs sm:!p-2.5 sm:!text-sm rounded-lg sm:rounded-xl font-semibold text-white shadow-lg glow-purple disabled:opacity-50"
     >
       {isConnecting ? (
         <span className="flex items-center gap-2">
