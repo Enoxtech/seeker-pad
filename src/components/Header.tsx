@@ -186,7 +186,7 @@ function HeaderContent() {
 
       {/* Notification Portal - renders outside header flow */}
       {notificationsOpen && (
-        <div className="fixed right-0 sm:right-2 top-16 sm:top-20 w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-2xl z-[9999] transform translate-x-2 sm:translate-x-0" style={{animation: 'dropdownIn 0.15s ease-out'}}>
+        <div className="fixed top-16 sm:top-20 left-auto right-4 sm:right-8 w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-2xl z-[9999]" style={{animation: 'dropdownIn 0.15s ease-out'}}>
           <div className="p-3 sm:p-4 border-b border-white/10 bg-purple-900/20">
             <h3 className="text-white font-bold text-sm sm:text-base flex items-center gap-2">
               <span>🔔</span> Notifications
