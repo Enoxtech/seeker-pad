@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useWallet, formatAddress } from './wallet/useWallet';
 import WalletButton from './wallet/WalletButton';
@@ -18,6 +19,7 @@ function HeaderContent() {
   ]);
   const { wallet, disconnect, isConnecting } = useWallet();
   const notifRef = useRef<HTMLDivElement>(null);
+  const [notifBtnPos, setNotifBtnPos] = useState<{ top: number; left: number } | null>(null);
 
   const handleNotificationClick = (id: number) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
@@ -97,74 +99,30 @@ function HeaderContent() {
           <div className="flex items-center gap-0.5 sm:gap-3">
             {/* Notifications - show for all users */}
             {true && (
-              <div className="relative" ref={notifRef}>
-                <button 
-                  onClick={() => setNotificationsOpen(!notificationsOpen)} 
-                  className="crystal-card p-2 sm:p-2.5 group flex-shrink-0" 
-                  style={{transform: 'none'}}
-                  aria-label="Notifications"
-                >
-                  <div className="relative">
-                    <svg className="w-4 sm:w-5 h-4 sm:h-5 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </div>
-                </button>
-                
-                {/* Notification Dropdown - positioned under button */}
-                {notificationsOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-2xl z-[9999]" style={{animation: 'dropdownIn 0.15s ease-out'}}>
-                    <div className="p-3 sm:p-4 border-b border-white/10 bg-purple-900/20 flex items-center justify-between">
-                      <h3 className="text-white font-bold text-sm sm:text-base flex items-center gap-2">
-                        <span>🔔</span> Notifications
-                        {notifications.filter(n => n.unread).length > 0 && (
-                          <span className="text-xs bg-purple-600 px-2 py-0.5 rounded-full">
-                            {notifications.filter(n => n.unread).length}
-                          </span>
-                        )}
-                      </h3>
-                      {notifications.length > 0 && (
-                        <div className="flex gap-2">
-                          <button onClick={markAllAsRead} className="text-xs text-gray-400 hover:text-white transition-colors" title="Mark all as read">✓</button>
-                          <button onClick={clearAllNotifications} className="text-xs text-gray-400 hover:text-red-400 transition-colors" title="Clear all">✕</button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="max-h-64 sm:max-h-80 overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500 text-sm">No notifications</div>
-                      ) : (
-                        notifications.map((notif) => (
-                          <div 
-                            key={notif.id} 
-                            onClick={() => handleNotificationClick(notif.id)}
-                            className={`p-3 sm:p-4 border-b border-white/5 hover:bg-white/10 transition-colors cursor-pointer ${notif.unread ? 'bg-purple-500/10 border-l-4 border-l-purple-500' : ''}`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${notif.unread ? 'bg-purple-500' : 'bg-gray-600'}`} />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-white font-medium text-sm truncate">{notif.title}</div>
-                                <div className="text-gray-400 text-xs line-clamp-2">{notif.message}</div>
-                                <div className="text-gray-500 text-xs mt-1">{notif.time}</div>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    {notifications.length > 0 && (
-                      <div className="p-3 border-t border-white/10 bg-purple-900/10">
-                        <button onClick={markAllAsRead} className="w-full text-center text-purple-400 text-sm hover:text-purple-300 font-medium">Mark All as Read</button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              <button 
+                ref={notifRef}
+                onClick={() => {
+                  if (!notificationsOpen && notifRef.current) {
+                    const rect = notifRef.current.getBoundingClientRect();
+                    setNotifBtnPos({ top: rect.bottom + 8, left: rect.left });
+                  }
+                  setNotificationsOpen(!notificationsOpen);
+                }} 
+                className="crystal-card p-2 sm:p-2.5 group flex-shrink-0" 
+                style={{transform: 'none'}}
+                aria-label="Notifications"
+              >
+                <div className="relative">
+                  <svg className="w-4 sm:w-5 h-4 sm:h-5 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
+              </button>
             ) /* end notifications */}
 
             <button onClick={toggleTheme} className="crystal-card p-2 sm:p-2.5 group relative overflow-hidden" aria-label="Toggle theme">
@@ -246,6 +204,62 @@ function HeaderContent() {
         )}
       </div>
 
+      {/* Notification Portal - renders outside header flow */}
+      {notificationsOpen && notifBtnPos && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-2xl z-[9999]"
+          style={{ 
+            top: notifBtnPos.top, 
+            left: notifBtnPos.left,
+            animation: 'dropdownIn 0.15s ease-out'
+          }}
+        >
+          <div className="p-3 sm:p-4 border-b border-white/10 bg-purple-900/20 flex items-center justify-between">
+            <h3 className="text-white font-bold text-sm sm:text-base flex items-center gap-2">
+              <span>🔔</span> Notifications
+              {notifications.filter(n => n.unread).length > 0 && (
+                <span className="text-xs bg-purple-600 px-2 py-0.5 rounded-full">
+                  {notifications.filter(n => n.unread).length}
+                </span>
+              )}
+            </h3>
+            {notifications.length > 0 && (
+              <div className="flex gap-2">
+                <button onClick={markAllAsRead} className="text-xs text-gray-400 hover:text-white transition-colors" title="Mark all as read">✓</button>
+                <button onClick={clearAllNotifications} className="text-xs text-gray-400 hover:text-red-400 transition-colors" title="Clear all">✕</button>
+              </div>
+            )}
+          </div>
+          <div className="max-h-64 sm:max-h-80 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 text-sm">No notifications</div>
+            ) : (
+              notifications.map((notif) => (
+                <div 
+                  key={notif.id} 
+                  onClick={() => handleNotificationClick(notif.id)}
+                  className={`p-3 sm:p-4 border-b border-white/5 hover:bg-white/10 transition-colors cursor-pointer ${notif.unread ? 'bg-purple-500/10 border-l-4 border-l-purple-500' : ''}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${notif.unread ? 'bg-purple-500' : 'bg-gray-600'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white font-medium text-sm truncate">{notif.title}</div>
+                      <div className="text-gray-400 text-xs line-clamp-2">{notif.message}</div>
+                      <div className="text-gray-500 text-xs mt-1">{notif.time}</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          {notifications.length > 0 && (
+            <div className="p-3 border-t border-white/10 bg-purple-900/10">
+              <button onClick={markAllAsRead} className="w-full text-center text-purple-400 text-sm hover:text-purple-300 font-medium">Mark All as Read</button>
+            </div>
+          )}
+        </div>,
+        document.body
+      )}
 
     </header>
   );
