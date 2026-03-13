@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useWallet, formatAddress } from './wallet/useWallet';
@@ -20,18 +20,27 @@ function HeaderContent() {
   const { wallet, disconnect, isConnecting } = useWallet();
   const notifRef = useRef<HTMLDivElement>(null);
   const notifBtnRef = useRef<HTMLButtonElement>(null);
-  const [notifPos, setNotifPos] = useState({ top: 0, right: 0, width: 0 });
+  const [notifPos, setNotifPos] = useState<{ top: number; right: number; width: number } | null>(null);
 
   // Track notification button position when dropdown opens
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (notificationsOpen && notifBtnRef.current) {
-      const btn = notifBtnRef.current;
-      const rect = btn.getBoundingClientRect();
-      setNotifPos({
-        top: rect.bottom + window.scrollY + 8,
-        right: window.innerWidth - rect.right,
-        width: rect.width
-      });
+      const updatePos = () => {
+        if (notifBtnRef.current) {
+          const btn = notifBtnRef.current;
+          const rect = btn.getBoundingClientRect();
+          setNotifPos({
+            top: rect.bottom + window.scrollY + 8,
+            right: window.innerWidth - rect.right,
+            width: rect.width
+          });
+        }
+      };
+      updatePos();
+      window.addEventListener('resize', updatePos);
+      return () => window.removeEventListener('resize', updatePos);
+    } else {
+      setNotifPos(null);
     }
   }, [notificationsOpen]);
 
@@ -219,7 +228,7 @@ function HeaderContent() {
       </div>
 
       {/* Notification Portal - renders outside header flow */}
-      {notificationsOpen && typeof document !== 'undefined' && createPortal(
+      {notificationsOpen && notifPos && typeof document !== 'undefined' && createPortal(
         <div 
           className="fixed z-[9999] w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-2xl"
           style={{ 
