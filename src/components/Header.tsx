@@ -63,7 +63,7 @@ function HeaderContent() {
   ];
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${scrolled ? 'glass border-b border-white/5 py-2 sm:py-3' : 'bg-transparent py-4 sm:py-5'}`}>
+    <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 overflow-visible ${scrolled ? 'glass border-b border-white/5 py-2 sm:py-3' : 'bg-transparent py-4 sm:py-5'}`}>
       <div className="max-w-7xl mx-auto px-3 sm:px-4">
         <div className="flex items-center justify-between gap-2">
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group flex-shrink-0">
@@ -104,7 +104,7 @@ function HeaderContent() {
                 </button>
 
                 {notificationsOpen && (
-                  <div className="fixed right-4 top-20 w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-xl z-[9999]" style={{animation: 'dropdownIn 0.2s ease-out forwards'}}>
+                  <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-xl z-[9999]" style={{animation: 'dropdownIn 0.15s ease-out'}}>
                     <div className="p-3 sm:p-4 border-b border-white/10 bg-purple-900/20">
                       <h3 className="text-white font-bold text-sm sm:text-base flex items-center gap-2">
                         <span>🔔</span> Notifications
