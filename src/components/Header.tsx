@@ -98,32 +98,34 @@ function HeaderContent() {
           </nav>
 
           <div className="flex items-center gap-0.5 sm:gap-3">
-            {/* Notifications - show for all users */}
-            {true && (
-              <button 
-                ref={notifBtnRef}
-                onClick={() => {
-                  if (!notificationsOpen && notifBtnRef.current) {
-                    const rect = notifBtnRef.current.getBoundingClientRect();
-                    setNotifBtnPos({ top: rect.bottom + 8, left: rect.left });
-                  }
-                  setNotificationsOpen(!notificationsOpen);
-                }} 
-                className="crystal-card p-2 sm:p-2.5 group flex-shrink-0" 
-                style={{transform: 'none'}}
-                aria-label="Notifications"
-              >
-                <div className="relative">
-                  <svg className="w-4 sm:w-5 h-4 sm:h-5 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                      {unreadCount}
-                    </span>
-                  )}
-                </div>
-              </button>
+            {/* Notifications - show for logged in users */}
+            {isLoggedIn && (
+              <div ref={notifRef} className="relative">
+                <button 
+                  ref={notifBtnRef}
+                  onClick={() => {
+                    if (!notificationsOpen && notifBtnRef.current) {
+                      const rect = notifBtnRef.current.getBoundingClientRect();
+                      setNotifBtnPos({ top: rect.bottom + 8, left: rect.left });
+                    }
+                    setNotificationsOpen(!notificationsOpen);
+                  }} 
+                  className="crystal-card p-2 sm:p-2.5 group flex-shrink-0" 
+                  style={{transform: 'none'}}
+                  aria-label="Notifications"
+                >
+                  <div className="relative">
+                    <svg className="w-4 sm:w-5 h-4 sm:h-5 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              </div>
             ) /* end notifications */}
 
             <button onClick={toggleTheme} className="crystal-card p-2 sm:p-2.5 group relative overflow-hidden" aria-label="Toggle theme">
