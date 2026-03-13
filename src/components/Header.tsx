@@ -95,8 +95,8 @@ function HeaderContent() {
           </nav>
 
           <div className="flex items-center gap-0.5 sm:gap-3">
-            {/* Notifications - Only show for logged in users */}
-            {isLoggedIn && (
+            {/* Notifications - show for all users */}
+            {true && (
               <div className="relative" ref={notifRef}>
                 <button 
                   onClick={() => setNotificationsOpen(!notificationsOpen)} 
@@ -116,7 +116,7 @@ function HeaderContent() {
                   </div>
                 </button>
               </div>
-            )}
+            ) /* end notifications */}
 
             <button onClick={toggleTheme} className="crystal-card p-2 sm:p-2.5 group relative overflow-hidden" aria-label="Toggle theme">
               <div className="relative z-10 w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center transition-transform duration-500 group-hover:rotate-180">
