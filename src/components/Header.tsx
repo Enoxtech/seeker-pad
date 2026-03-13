@@ -19,6 +19,7 @@ function HeaderContent() {
   ]);
   const { wallet, disconnect, isConnecting } = useWallet();
   const notifRef = useRef<HTMLDivElement>(null);
+  const notifBtnRef = useRef<HTMLButtonElement>(null);
   const [notifBtnPos, setNotifBtnPos] = useState<{ top: number; left: number } | null>(null);
 
   const handleNotificationClick = (id: number) => {
@@ -100,10 +101,10 @@ function HeaderContent() {
             {/* Notifications - show for all users */}
             {true && (
               <button 
-                ref={notifRef}
+                ref={notifBtnRef}
                 onClick={() => {
-                  if (!notificationsOpen && notifRef.current) {
-                    const rect = notifRef.current.getBoundingClientRect();
+                  if (!notificationsOpen && notifBtnRef.current) {
+                    const rect = notifBtnRef.current.getBoundingClientRect();
                     setNotifBtnPos({ top: rect.bottom + 8, left: rect.left });
                   }
                   setNotificationsOpen(!notificationsOpen);
