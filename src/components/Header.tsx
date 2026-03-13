@@ -87,7 +87,8 @@ function HeaderContent() {
               <div className="relative" ref={notifRef}>
                 <button 
                   onClick={() => setNotificationsOpen(!notificationsOpen)} 
-                  className="crystal-card p-2 sm:p-2.5 group" 
+                  className="crystal-card p-2 sm:p-2.5 group flex-shrink-0" 
+                  style={{transform: 'none'}}
                   aria-label="Notifications"
                 >
                   <div className="relative">
