@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useWallet, formatAddress } from './wallet/useWallet';
 import WalletButton from './wallet/WalletButton';
@@ -19,43 +18,16 @@ function HeaderContent() {
   ]);
   const { wallet, disconnect, isConnecting } = useWallet();
   const notifRef = useRef<HTMLDivElement>(null);
-  const notifBtnRef = useRef<HTMLButtonElement>(null);
-  const [notifPos, setNotifPos] = useState<{ top: number; right: number; width: number } | null>(null);
 
-  // Track notification button position when dropdown opens
-  useLayoutEffect(() => {
-    if (notificationsOpen && notifBtnRef.current) {
-      const updatePos = () => {
-        if (notifBtnRef.current) {
-          const btn = notifBtnRef.current;
-          const rect = btn.getBoundingClientRect();
-          setNotifPos({
-            top: rect.bottom + window.scrollY + 8,
-            right: window.innerWidth - rect.right,
-            width: rect.width
-          });
-        }
-      };
-      updatePos();
-      window.addEventListener('resize', updatePos);
-      return () => window.removeEventListener('resize', updatePos);
-    } else {
-      setNotifPos(null);
-    }
-  }, [notificationsOpen]);
-
-  // Mark single notification as read and close dropdown
   const handleNotificationClick = (id: number) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
     setNotificationsOpen(false);
   };
 
-  // Mark all as read
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
   };
 
-  // Clear all notifications
   const clearAllNotifications = () => {
     setNotifications([]);
     setNotificationsOpen(false);
@@ -127,8 +99,6 @@ function HeaderContent() {
             {isLoggedIn && (
               <div className="relative" ref={notifRef}>
                 <button 
-                  id="notification-btn"
-                  ref={notifBtnRef}
                   onClick={() => setNotificationsOpen(!notificationsOpen)} 
                   className="crystal-card p-2 sm:p-2.5 group flex-shrink-0" 
                   style={{transform: 'none'}}
@@ -227,20 +197,17 @@ function HeaderContent() {
         )}
       </div>
 
-      {/* Notification Portal - renders outside header flow */}
-      {notificationsOpen && notifPos && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed z-[9999] w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-2xl"
-          style={{ 
-            top: notifPos.top, 
-            right: notifPos.right,
-            animation: 'dropdownIn 0.15s ease-out'
-          }}
-        >
+      {/* Notification Portal - fixed position under button */}
+      {notificationsOpen && (
+        <div className="fixed top-16 sm:top-20 left-auto right-4 sm:right-8 w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-2xl z-[9999]" style={{animation: 'dropdownIn 0.15s ease-out'}}>
           <div className="p-3 sm:p-4 border-b border-white/10 bg-purple-900/20 flex items-center justify-between">
             <h3 className="text-white font-bold text-sm sm:text-base flex items-center gap-2">
               <span>🔔</span> Notifications
-              {unreadCount > 0 && <span className="text-xs bg-purple-600 px-2 py-0.5 rounded-full">{unreadCount}</span>}
+              {notifications.filter(n => n.unread).length > 0 && (
+                <span className="text-xs bg-purple-600 px-2 py-0.5 rounded-full">
+                  {notifications.filter(n => n.unread).length}
+                </span>
+              )}
             </h3>
             {notifications.length > 0 && (
               <div className="flex gap-2">
@@ -276,8 +243,7 @@ function HeaderContent() {
               <button onClick={markAllAsRead} className="w-full text-center text-purple-400 text-sm hover:text-purple-300 font-medium">Mark All as Read</button>
             </div>
           )}
-        </div>,
-        document.body
+        </div>
       )}
     </header>
   );
