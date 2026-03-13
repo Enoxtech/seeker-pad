@@ -210,6 +210,34 @@ function HeaderContent() {
           </div>
         )}
       </div>
+
+      {/* Notification Portal - renders outside header flow */}
+      {notificationsOpen && (
+        <div className="fixed right-4 top-16 sm:top-20 w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-2xl z-[9999]" style={{animation: 'dropdownIn 0.15s ease-out'}}>
+          <div className="p-3 sm:p-4 border-b border-white/10 bg-purple-900/20">
+            <h3 className="text-white font-bold text-sm sm:text-base flex items-center gap-2">
+              <span>🔔</span> Notifications
+            </h3>
+          </div>
+          <div className="max-h-64 sm:max-h-80 overflow-y-auto">
+            {notifications.map((notif) => (
+              <div key={notif.id} className={`p-3 sm:p-4 border-b border-white/5 hover:bg-white/10 transition-colors cursor-pointer ${notif.unread ? 'bg-purple-500/10 border-l-4 border-l-purple-500' : ''}`}>
+                <div className="flex items-start gap-3">
+                  <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${notif.unread ? 'bg-purple-500' : 'bg-gray-600'}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-medium text-sm truncate">{notif.title}</div>
+                    <div className="text-gray-400 text-xs line-clamp-2">{notif.message}</div>
+                    <div className="text-gray-500 text-xs mt-1">{notif.time}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="p-3 border-t border-white/10 bg-purple-900/10">
+            <button className="w-full text-center text-purple-400 text-sm hover:text-purple-300 font-medium">View All Notifications</button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
