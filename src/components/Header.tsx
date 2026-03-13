@@ -103,7 +103,7 @@ function HeaderContent() {
                 </button>
 
                 {notificationsOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-xl z-50" style={{animation: 'dropdownIn 0.2s ease-out forwards', transformOrigin: 'top right'}}>
+                  <div className="fixed right-4 top-20 w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-xl z-[9999]" style={{animation: 'dropdownIn 0.2s ease-out forwards'}}>
                     <div className="p-3 sm:p-4 border-b border-white/10 bg-purple-900/20">
                       <h3 className="text-white font-bold text-sm sm:text-base flex items-center gap-2">
                         <span>🔔</span> Notifications
