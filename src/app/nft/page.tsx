@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { useWallet } from '@/contexts/WalletContextProvider';
 import Link from 'next/link';
 
 const nftCategories = [
@@ -11,6 +13,36 @@ const nftCategories = [
 ];
 
 export default function NFTHub() {
+  const { connected, connect } = useWallet()
+  const [selectedNFT, setSelectedNFT] = useState<typeof nftCategories[0] | null>(null)
+  const [minting, setMinting] = useState(false)
+  const [minted, setMinted] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleMint = async (nft: typeof nftCategories[0]) => {
+    if (!connected) {
+      connect()
+      return
+    }
+    
+    setSelectedNFT(nft)
+    setMinting(true)
+    setError('')
+    
+    // Simulate minting process
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    // Mock success
+    setMinting(false)
+    setMinted(true)
+  }
+
+  const closeModal = () => {
+    setSelectedNFT(null)
+    setMinted(false)
+    setError('')
+  }
+
   return (
     <div className="min-h-screen pt-24 pb-16 page-enter">
       <section className="relative py-20 px-4 overflow-hidden">
@@ -76,7 +108,10 @@ export default function NFTHub() {
                       </li>
                     ))}
                   </ul>
-                  <button className="w-full py-3 bg-white/5 hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl transition-all">
+                  <button 
+                    onClick={() => handleMint(cat)}
+                    className="w-full py-3 bg-white/5 hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl transition-all"
+                  >
                     Mint NFT
                   </button>
                 </div>
@@ -100,6 +135,66 @@ export default function NFTHub() {
           </div>
         </div>
       </section>
+
+      {/* Mint Modal */}
+      {selectedNFT && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 w-full max-w-md">
+            {!minted ? (
+              <>
+                <h3 className="text-xl font-bold text-white mb-4">Mint {selectedNFT.name}</h3>
+                <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-r ${selectedNFT.color} flex items-center justify-center text-3xl`}>
+                  🔒
+                </div>
+                <p className="text-gray-400 text-center mb-6">
+                  {minting 
+                    ? 'Minting your NFT...' 
+                    : `Supply: ${selectedNFT.supply} | Free mint for eligible users`
+                  }
+                </p>
+                
+                {error && (
+                  <p className="text-red-400 text-center mb-4 text-sm">{error}</p>
+                )}
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeModal}
+                    className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleMint(selectedNFT)}
+                    disabled={minting}
+                    className={`flex-1 py-3 bg-gradient-to-r ${selectedNFT.color} text-white font-semibold rounded-xl transition-all disabled:opacity-50`}
+                  >
+                    {minting ? 'Minting...' : connected ? 'Mint Now' : 'Connect Wallet'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-center">
+                  <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center text-4xl">
+                    ✅
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Minted Successfully!</h3>
+                  <p className="text-gray-400 mb-6">
+                    Your {selectedNFT.name} NFT has been minted to your wallet.
+                  </p>
+                  <button
+                    onClick={closeModal}
+                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl transition-all"
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
