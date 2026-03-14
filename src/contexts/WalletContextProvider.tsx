@@ -1,7 +1,6 @@
 'use client';
 
 import { ConnectionProvider, WalletProvider, useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { clusterApiUrl } from '@solana/web3.js';
 import { useMemo, ReactNode } from 'react';
 
 interface WalletProviderProps {
@@ -13,7 +12,11 @@ export function WalletProviderComponent({
   children, 
   network = 'mainnet-beta' 
 }: WalletProviderProps) {
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const endpoint = useMemo(() => {
+    if (network === 'mainnet-beta') return 'https://api.mainnet-beta.solana.com';
+    if (network === 'testnet') return 'https://api.testnet.solana.com';
+    return 'https://api.devnet.solana.com';
+  }, [network]);
   const wallets = useMemo(() => [], []);
 
   return (
