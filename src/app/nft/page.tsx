@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useWallet } from '@/contexts/WalletContextProvider';
+import { useWallet } from '@/components/wallet/WalletContext';
 import Link from 'next/link';
 
 const nftCategories = [
@@ -13,7 +13,8 @@ const nftCategories = [
 ];
 
 export default function NFTHub() {
-  const { connected, connect } = useWallet()
+  const { wallet, connect } = useWallet()
+  const connected = wallet?.connected
   const [selectedNFT, setSelectedNFT] = useState<typeof nftCategories[0] | null>(null)
   const [minting, setMinting] = useState(false)
   const [minted, setMinted] = useState(false)
@@ -110,7 +111,7 @@ export default function NFTHub() {
                   </ul>
                   <button 
                     onClick={() => handleMint(cat)}
-                    className="w-full py-3 bg-white/5 hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl transition-all"
+                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all cursor-pointer"
                   >
                     Mint NFT
                   </button>
