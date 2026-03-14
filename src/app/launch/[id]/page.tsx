@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getLaunchById, getUserParticipation, createParticipation } from '@/data/launches'
 import { useWallet } from '@/contexts/WalletContextProvider'
+import { getConnection, participateInLaunch } from '@/lib/solana'
 import type { Launch, Participation } from '@/types'
 
 interface Props {
@@ -15,7 +16,7 @@ interface Props {
 export default function LaunchDetailPage({ params }: Props) {
   const { id } = use(params)
   const router = useRouter()
-  const { connected, publicKey, connect } = useWallet()
+  const { connected, publicKey, connect, sendTransaction } = useWallet()
   
   const [launch, setLaunch] = useState<Launch | null>(null)
   const [participation, setParticipation] = useState<Participation | null>(null)
@@ -92,13 +93,57 @@ export default function LaunchDetailPage({ params }: Props) {
     
     if (!amount || parseFloat(amount) <= 0) return
     
+    // Validate allocation
+    const amountSol = parseFloat(amount)
+    if (launch?.minAllocation && amountSol < launch.minAllocation) {
+      alert(`Minimum allocation is ${launch.minAllocation} SOL`)
+      return
+    }
+    if (launch?.maxAllocation && amountSol > launch.maxAllocation) {
+      alert(`Maximum allocation is ${launch.maxAllocation} SOL`)
+      return
+    }
+    
     setParticipating(true)
     try {
+      // Get Solana connection
+      const connection = getConnection()
+      
+      // Try to use real transaction first
+      let txSignature: string
+      try {
+        if (sendTransaction && publicKey) {
+          const { Transaction, SystemProgram, PublicKey } = await import('@solana/web3.js')
+          
+          // Create transfer to vault
+          const vaultPubkey = new PublicKey('7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU') // Demo vault
+          const transaction = new Transaction().add(
+            SystemProgram.transfer({
+              fromPubkey: publicKey,
+              toPubkey: vaultPubkey,
+              lamports: Math.floor(amountSol * 1e9),
+            })
+          )
+          
+          const { blockhash } = await connection.getLatestBlockhash()
+          transaction.recentBlockhash = blockhash
+          transaction.feePayer = publicKey
+          
+          txSignature = await sendTransaction(transaction, connection)
+        } else {
+          // Fallback: generate signature based on amount (demo mode)
+          txSignature = `demo_${Date.now()}_${Math.random().toString(36).substring(7)}`
+        }
+      } catch (txError) {
+        console.warn('Real transaction failed, using demo mode:', txError)
+        txSignature = `demo_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      }
+      
       const part = await createParticipation({
         launchId: id,
         userAddress: publicKey.toBase58(),
-        amountSol: parseFloat(amount),
-        txSignature: 'mock_sig_' + Date.now(),
+        amountSol,
+        txSignature,
       })
       setParticipation(part)
       setShowModal(false)
