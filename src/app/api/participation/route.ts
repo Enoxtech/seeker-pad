@@ -1,9 +1,37 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+// Initialize Supabase only if env vars exist
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
+// Mock participations for when Supabase is not configured
+const mockParticipations = [
+  {
+    id: '1',
+    launch_id: '1',
+    user_address: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+    amount_sol: 5,
+    tokens_received: 100,
+    status: 'claimed',
+    claimed_amount: 100,
+    tx_signature: 'mock_sig_1',
+    created_at: '2026-03-10T14:00:00Z'
+  },
+  {
+    id: '2',
+    launch_id: '1',
+    user_address: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+    amount_sol: 10,
+    tokens_received: 200,
+    status: 'pending',
+    claimed_amount: 0,
+    tx_signature: 'mock_sig_2',
+    created_at: '2026-03-12T10:30:00Z'
+  }
+];
 
 // Get user's participations
 export async function GET(
@@ -12,6 +40,13 @@ export async function GET(
 ) {
   try {
     const { address } = await params;
+    
+    // If Supabase is not configured, return mock data
+    if (!supabase) {
+      console.log('Supabase not configured, returning mock participations');
+      const userParticipations = mockParticipations.filter(p => p.user_address === address);
+      return NextResponse.json(userParticipations);
+    }
     
     const { data, error } = await supabase
       .from('participations')
@@ -45,6 +80,23 @@ export async function POST(request: Request) {
     // Validate amount
     if (amountSol <= 0) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    }
+    
+    // If Supabase is not configured, return mock success response
+    if (!supabase) {
+      const mockResponse = {
+        id: Date.now().toString(),
+        launch_id: launchId,
+        user_address: userAddress,
+        amount_sol: amountSol,
+        tokens_received: Math.floor(amountSol / 0.05), // Mock price
+        status: 'pending',
+        claimed_amount: 0,
+        tx_signature: txSignature,
+        created_at: new Date().toISOString(),
+      };
+      console.log('Supabase not configured, returning mock participation response');
+      return NextResponse.json(mockResponse, { status: 201 });
     }
     
     // Get launch price to calculate tokens
