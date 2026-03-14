@@ -6,7 +6,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getLaunchById, getUserParticipation, createParticipation } from '@/data/launches'
 import { useWallet } from '@/contexts/WalletContextProvider'
-import { getConnection, participateInLaunch } from '@/lib/solana'
 import type { Launch, Participation } from '@/types'
 
 interface Props {
@@ -107,7 +106,8 @@ export default function LaunchDetailPage({ params }: Props) {
     setParticipating(true)
     try {
       // Get Solana connection
-      const connection = getConnection()
+      const { Connection } = await import('@solana/web3.js')
+      const connection = new Connection('https://api.devnet.solana.com', 'confirmed')
       
       // Try to use real transaction first
       let txSignature: string
