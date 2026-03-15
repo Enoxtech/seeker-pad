@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js'
 import { getUserParticipation, createParticipation } from '@/data/launches'
+import Link from 'next/link'
 
 // Dynamic imports for wallet UI components
 const WalletMultiButton = dynamic(
@@ -15,8 +16,6 @@ const WalletDisconnectButton = dynamic(
   () => import('@solana/wallet-adapter-react-ui').then(mod => mod.WalletDisconnectButton),
   { ssr: false }
 )
-
-
 
 export default function LaunchDetail({ params }: { params: { id: string } }) {
   const { id } = params
@@ -92,7 +91,6 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
     setIsLoading(true)
 
     try {
-      // For demo: simulate transaction (mock vault)
       const mockVault = new PublicKey('Gq3q3J7L9m8V6F5qK2p4R8t3Y1n6B7c4D6e9F3g2H1k5')
       const vaultPubkey = mockVault
 
@@ -111,7 +109,6 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
       try {
         const signature = await sendTransaction(transaction, connection)
         
-        // Save to database
         const part = await createParticipation({
           launchId: id,
           userAddress: publicKey.toBase58(),
@@ -123,7 +120,6 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
         setPurchasedAmount((prev) => (prev || 0) + amountSolNum)
         setAmountSol('')
       } catch (txError: any) {
-        // If transaction fails, save as pending anyway for demo
         const part = await createParticipation({
           launchId: id,
           userAddress: publicKey.toBase58(),
@@ -145,8 +141,11 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
 
   if (!launch) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur-xl animate-pulse opacity-30"></div>
+          <div className="relative w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
       </div>
     )
   }
@@ -158,173 +157,333 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
   const tokenPrice = Number(launch.launchPrice)
   const tokenAmount = amountSol ? (Number(amountSol) / tokenPrice).toLocaleString() : '0'
 
+  // Determine gradient based on launch type
+  const getGradient = () => {
+    if (launch.type === 'elite') return 'from-purple-600 via-pink-600 to-purple-600'
+    if (launch.status === 'live') return 'from-green-500 via-emerald-500 to-green-500'
+    if (launch.status === 'upcoming') return 'from-blue-500 via-cyan-500 to-blue-500'
+    return 'from-gray-500 via-slate-500 to-gray-500'
+  }
+
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#0a0a0f] text-white">
+      {/* Hero Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-pink-600/10 rounded-full blur-[100px]"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.02%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-50"></div>
+      </div>
+
       {/* Header */}
-      <header className="border-b border-white/10">
+      <header className="relative z-10 border-b border-white/5 backdrop-blur-xl bg-black/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <a href="/launchpad" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            SeekerPad
-          </a>
+          <Link href="/launchpad" className="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent animate-gradient">
+            ⚡ SeekerPad
+          </Link>
           <div className="flex items-center gap-4">
+            <nav className="hidden md:flex items-center gap-6 mr-4">
+              <Link href="/launchpad" className="text-gray-400 hover:text-white transition-colors text-sm">Launches</Link>
+              <Link href="/nft" className="text-gray-400 hover:text-white transition-colors text-sm">NFT</Link>
+              <Link href="/portfolio" className="text-gray-400 hover:text-white transition-colors text-sm">Portfolio</Link>
+            </nav>
             <WalletMultiButton />
             {connected && <WalletDisconnectButton />}
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Launch Info */}
-        <div className="grid md:grid-cols-2 gap-8 mb-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              {launch.logoUrl ? (
-                <img src={launch.logoUrl} alt={launch.name} className="w-20 h-20 rounded-xl" />
-              ) : (
-                <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-3xl font-bold">
-                  {launch.symbol?.[0] || '?'}
-                </div>
-              )}
-              <div>
-                <h1 className="text-3xl font-bold">{launch.name}</h1>
-                <p className="text-gray-400">{launch.symbol}</p>
-              </div>
-            </div>
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Hero Section */}
+        <div className="mb-12">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white/5 to-white/0 border border-white/10 backdrop-blur-sm">
+            {/* Animated gradient border */}
+            <div className={`absolute inset-0 bg-gradient-to-r ${getGradient()} opacity-20`}></div>
             
-            <p className="text-gray-300">{launch.description}</p>
-
-            <div className="flex gap-4">
-              {launch.websiteUrl && (
-                <a href={launch.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300">
-                  🌐 Website
-                </a>
-              )}
-              {launch.twitterUrl && (
-                <a href={launch.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300">
-                  🐦 Twitter
-                </a>
-              )}
-              {launch.telegramUrl && (
-                <a href={launch.telegramUrl} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300">
-                  ✈️ Telegram
-                </a>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Status</span>
-                <span className={`px-3 py-1 rounded-full text-sm ${
-                  launch.status === 'live' ? 'bg-green-500/20 text-green-400' :
-                  launch.status === 'upcoming' ? 'bg-blue-500/20 text-blue-400' :
-                  'bg-gray-500/20 text-gray-400'
-                }`}>
-                  {launch.status?.charAt(0).toUpperCase() + launch.status?.slice(1)}
-                </span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span className="text-gray-400">Price</span>
-                <span>${tokenPrice} SOL</span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span className="text-gray-400">Total Raised</span>
-                <span className="text-green-400">${Number(launch.totalRaised || 0).toLocaleString()}</span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span className="text-gray-400">Target</span>
-                <span>${Number(launch.raiseTarget || 0).toLocaleString()}</span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-gray-400">Participants</span>
-                <span>{launch.participantsCount || 0}</span>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mt-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-400">Progress</span>
-                  <span>{progress.toFixed(1)}%</span>
+            <div className="relative p-8 md:p-12">
+              <div className="flex flex-col md:flex-row gap-8 items-start">
+                {/* Token Icon */}
+                <div className="relative">
+                  <div className={`w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-gradient-to-br ${getGradient()} flex items-center justify-center text-4xl md:text-5xl font-bold shadow-2xl`}>
+                    {launch.symbol?.[0] || '?'}
+                  </div>
+                  <div className={`absolute -bottom-2 -right-2 px-3 py-1 rounded-full text-xs font-semibold ${
+                    launch.status === 'live' ? 'bg-green-500' :
+                    launch.status === 'upcoming' ? 'bg-blue-500' : 'bg-gray-500'
+                  }`}>
+                    {launch.status?.toUpperCase()}
+                  </div>
                 </div>
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
-                    style={{ width: `${progress}%` }}
-                  />
+
+                {/* Token Info */}
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <h1 className="text-4xl md:text-5xl font-bold">{launch.name}</h1>
+                    <span className="px-3 py-1 bg-white/10 rounded-full text-sm font-medium">{launch.symbol}</span>
+                    {launch.type === 'elite' && (
+                      <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-xs font-bold">
+                        ⭐ ELITE
+                      </span>
+                    )}
+                  </div>
+                  
+                  <p className="text-gray-400 text-lg max-w-2xl mb-6">{launch.description}</p>
+
+                  {/* Social Links */}
+                  <div className="flex flex-wrap gap-3">
+                    {launch.websiteUrl && (
+                      <a href={launch.websiteUrl} target="_blank" rel="noopener noreferrer" 
+                         className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all hover:scale-105">
+                        🌐 <span className="text-sm">Website</span>
+                      </a>
+                    )}
+                    {launch.twitterUrl && (
+                      <a href={launch.twitterUrl} target="_blank" rel="noopener noreferrer"
+                         className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all hover:scale-105">
+                        🐦 <span className="text-sm">Twitter</span>
+                      </a>
+                    )}
+                    {launch.telegramUrl && (
+                      <a href={launch.telegramUrl} target="_blank" rel="noopener noreferrer"
+                         className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all hover:scale-105">
+                        ✈️ <span className="text-sm">Telegram</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Purchase Section */}
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10 max-w-md">
-          <h2 className="text-xl font-bold mb-4">Buy Tokens</h2>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-white/10 p-6">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/20 rounded-full blur-2xl"></div>
+            <p className="text-gray-400 text-sm mb-1">Price</p>
+            <p className="text-2xl font-bold text-white">${tokenPrice}</p>
+            <p className="text-purple-400 text-sm">per token</p>
+          </div>
           
-          {purchasedAmount !== null && (
-            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <p className="text-green-400 text-sm">You have purchased {purchasedAmount} SOL worth of tokens</p>
-            </div>
-          )}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-white/10 p-6">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/20 rounded-full blur-2xl"></div>
+            <p className="text-gray-400 text-sm mb-1">Raised</p>
+            <p className="text-2xl font-bold text-white">${Number(launch.totalRaised || 0).toLocaleString()}</p>
+            <p className="text-green-400 text-sm">of ${Number(launch.raiseTarget || 0).toLocaleString()}</p>
+          </div>
 
-          {connected ? (
-            <>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Amount (SOL)</label>
-                  <input
-                    type="number"
-                    value={amountSol}
-                    onChange={(e) => setAmountSol(e.target.value)}
-                    placeholder="Enter SOL amount"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                  />
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-white/10 p-6">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/20 rounded-full blur-2xl"></div>
+            <p className="text-gray-400 text-sm mb-1">Participants</p>
+            <p className="text-2xl font-bold text-white">{launch.participantsCount || 0}</p>
+            <p className="text-blue-400 text-sm">investors</p>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500/10 to-purple-500/10 border border-white/10 p-6">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-pink-500/20 rounded-full blur-2xl"></div>
+            <p className="text-gray-400 text-sm mb-1">Progress</p>
+            <p className="text-2xl font-bold text-white">{progress.toFixed(0)}%</p>
+            <p className="text-pink-400 text-sm">completed</p>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Purchase Card */}
+          <div className="lg:col-span-2">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white/5 to-white/0 border border-white/10 backdrop-blur-sm">
+              <div className={`absolute inset-0 bg-gradient-to-r ${getGradient()} opacity-10`}></div>
+              
+              <div className="relative p-8">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                  <span className="w-2 h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
+                  Participate in Sale
+                </h2>
+
+                {/* Progress Bar */}
+                <div className="mb-8">
+                  <div className="flex justify-between text-sm mb-3">
+                    <span className="text-gray-400">Fundraising Progress</span>
+                    <span className="font-semibold">{progress.toFixed(1)}%</span>
+                  </div>
+                  <div className="h-3 bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full bg-gradient-to-r ${getGradient()} rounded-full transition-all duration-500`}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-2 text-xs text-gray-500">
+                    <span>${Number(launch.totalRaised || 0).toLocaleString()} raised</span>
+                    <span>${Number(launch.raiseTarget || 0).toLocaleString()} target</span>
+                  </div>
                 </div>
 
-                <div className="flex justify-between text-sm text-gray-400">
-                  <span>You will receive:</span>
-                  <span>{tokenAmount} {launch.symbol}</span>
+                {/* Allocation Info */}
+                <div className="grid md:grid-cols-2 gap-4 mb-8">
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                    <p className="text-gray-400 text-sm mb-1">Min Allocation</p>
+                    <p className="text-xl font-bold">{launch.minAllocation || 0.1} SOL</p>
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                    <p className="text-gray-400 text-sm mb-1">Max Allocation</p>
+                    <p className="text-xl font-bold">{launch.maxAllocation || 10} SOL</p>
+                  </div>
                 </div>
 
-                {error && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                    <p className="text-red-400 text-sm">{error}</p>
+                {purchasedAmount !== null && (
+                  <div className="mb-6 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🎉</span>
+                      <div>
+                        <p className="text-green-400 font-semibold">You have participated!</p>
+                        <p className="text-gray-400 text-sm">Your contribution: {purchasedAmount} SOL</p>
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                {success && (
-                  <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                    <p className="text-green-400 text-sm">{success}</p>
+                {connected ? (
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <label className="block text-sm text-gray-400 mb-2">Amount (SOL)</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={amountSol}
+                          onChange={(e) => setAmountSol(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all text-lg"
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">SOL</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/5">
+                      <span className="text-gray-400">You will receive:</span>
+                      <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                        {tokenAmount} {launch.symbol}
+                      </span>
+                    </div>
+
+                    {error && (
+                      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                        <p className="text-red-400 text-sm">⚠️ {error}</p>
+                      </div>
+                    )}
+
+                    {success && (
+                      <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                        <p className="text-green-400 text-sm">✅ {success}</p>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleBuyTokens}
+                      disabled={isLoading}
+                      className="w-full py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-purple-500/25"
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                          Processing...
+                        </span>
+                      ) : (
+                        '🔥 Buy Tokens'
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
+                      <span className="text-4xl">🔌</span>
+                    </div>
+                    <p className="text-gray-400 mb-6">Connect your wallet to participate in the token sale</p>
+                    <button
+                      onClick={() => connect()}
+                      className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-105 shadow-lg shadow-purple-500/25"
+                    >
+                      Connect Wallet
+                    </button>
                   </div>
                 )}
-
-                <button
-                  onClick={handleBuyTokens}
-                  disabled={isLoading}
-                  className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all"
-                >
-                  {isLoading ? 'Processing...' : 'Buy Tokens'}
-                </button>
               </div>
-            </>
-          ) : (
-            <div className="text-center space-y-4">
-              <p className="text-gray-400">Connect your wallet to participate</p>
-              <button
-                onClick={() => connect()}
-                className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all"
-              >
-                Connect Wallet
-              </button>
             </div>
-          )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Token Info Card */}
+            <div className="rounded-3xl bg-white/5 border border-white/10 p-6 backdrop-blur-sm">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <span>📊</span> Tokenomics
+              </h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-2 border-b border-white/5">
+                  <span className="text-gray-400">Token Name</span>
+                  <span className="font-medium">{launch.name}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-white/5">
+                  <span className="text-gray-400">Symbol</span>
+                  <span className="font-medium">{launch.symbol}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-white/5">
+                  <span className="text-gray-400">Total Supply</span>
+                  <span className="font-medium">1,000,000,000</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-white/5">
+                  <span className="text-gray-400">Initial Supply</span>
+                  <span className="font-medium">100,000,000</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-400">Decimals</span>
+                  <span className="font-medium">9</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sale Stages */}
+            <div className="rounded-3xl bg-white/5 border border-white/10 p-6 backdrop-blur-sm">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <span>📅</span> Sale Schedule
+              </h3>
+              <div className="space-y-3">
+                <div className={`p-3 rounded-xl border ${launch.status === 'upcoming' ? 'bg-blue-500/10 border-blue-500/20' : 'bg-white/5 border-white/5'}`}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Phase 1</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${launch.status === 'upcoming' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'}`}>
+                      {launch.status === 'upcoming' ? 'Upcoming' : 'Live'}
+                    </span>
+                  </div>
+                  <p className="text-gray-400 text-sm mt-1">Price: ${tokenPrice} SOL</p>
+                </div>
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Phase 2</span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-gray-500/50 text-white">Upcoming</span>
+                  </div>
+                  <p className="text-gray-400 text-sm mt-1">Price: ${(tokenPrice * 1.25).toFixed(3)} SOL</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Warning */}
+            <div className="rounded-3xl bg-amber-500/5 border border-amber-500/20 p-6 backdrop-blur-sm">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">⚠️</span>
+                <div>
+                  <h4 className="font-bold text-amber-400 mb-1">Risk Warning</h4>
+                  <p className="text-gray-400 text-sm">Cryptocurrency investments carry high risk. Do your own research before participating.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-white/5 mt-16 py-8">
+        <div className="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+          <p>© 2026 SeekerPad — Built on Solana</p>
+        </div>
+      </footer>
     </div>
   )
 }
