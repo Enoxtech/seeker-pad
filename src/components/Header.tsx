@@ -99,8 +99,8 @@ function HeaderContent() {
           </nav>
 
           <div className="flex items-center gap-0.5 sm:gap-3">
-            {/* Notifications - show for ALL users */}
-            <div ref={notifRef} className="relative">
+            {/* Notifications - show only for connected wallet users */}
+            {wallet.connected && (<div ref={notifRef} className="relative">
               <button 
                 ref={notifBtnRef}
                 onClick={(e) => {
@@ -122,7 +122,7 @@ function HeaderContent() {
                   )}
                 </div>
               </button>
-            </div>
+            </div>)}
 
             <button onClick={toggleTheme} className="crystal-card p-2 sm:p-2.5 group relative overflow-hidden" aria-label="Toggle theme">
               <div className="relative z-10 w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center transition-transform duration-500 group-hover:rotate-180">
