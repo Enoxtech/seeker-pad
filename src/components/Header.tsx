@@ -99,7 +99,7 @@ function HeaderContent() {
           </nav>
 
           <div className="flex items-center gap-0.5 sm:gap-3">
-            {/* Notifications - show for logged in users */}
+            {/* Notifications - show for ALL users */}
             <div ref={notifRef} className="relative">
               <button 
                 ref={notifBtnRef}
