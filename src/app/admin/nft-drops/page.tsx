@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
 
 interface NFTDrop {
   id: string;
@@ -25,7 +24,6 @@ interface NFTDrop {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
 export default function NFTDropsAdmin() {
-  const { publicKey } = useWallet();
   const [drops, setDrops] = useState<NFTDrop[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -172,14 +170,9 @@ export default function NFTDropsAdmin() {
     });
   };
 
-  if (!publicKey) {
-    return (
-      <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">NFT Drops Management</h1>
-        <p className="text-gray-400">Connect your wallet to manage NFT drops</p>
-      </div>
-    );
-  }
+  // Note: For MVP, wallet check is removed. Add admin whitelist in production.
+  // const ADMIN_WALLETS = process.env.NEXT_PUBLIC_ADMIN_WALLETS?.split(',') || [];
+  // const isAdmin = publicKey && ADMIN_WALLETS.includes(publicKey.toString());
 
   return (
     <div className="p-6">
