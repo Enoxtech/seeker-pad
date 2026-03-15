@@ -114,14 +114,29 @@ function NFTDropsContent() {
         <div className="max-w-md mx-auto text-center">
           <h1 className="text-2xl font-bold mb-4">NFT Drops Management</h1>
           <p className="text-gray-400 mb-6">Connect your wallet to manage NFT drops</p>
-          <p className="text-sm text-gray-500 mb-4">
-            Click the wallet button in the header to connect
-          </p>
+          
+          {/* Wallet connect prompt */}
+          <div className="bg-gray-800 rounded-lg p-4 mb-4">
+            <p className="text-sm text-gray-400 mb-3">
+              Click the <span className="text-white font-medium">wallet button in the header</span> to connect
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('openWalletModal'))}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-lg font-medium"
+              >
+                Connect Wallet
+              </button>
+            </div>
+          </div>
+          
+          <div className="text-gray-500 text-sm mb-2">or</div>
+          
           <button
             onClick={enableDemoMode}
-            className="text-sm text-gray-500 hover:text-gray-400 underline"
+            className="text-gray-400 hover:text-white underline"
           >
-            Or continue in Demo Mode
+            Continue in Demo Mode
           </button>
         </div>
       </div>
