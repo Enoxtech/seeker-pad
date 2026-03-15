@@ -103,11 +103,14 @@ function HeaderContent() {
               <div ref={notifRef} className="relative">
                 <button 
                   ref={notifBtnRef}
-                  onClick={() => {
-                    if (!notificationsOpen && notifBtnRef.current) {
-                      const rect = notifBtnRef.current.getBoundingClientRect();
-                      setNotifBtnPos({ top: rect.bottom + 8, left: rect.left });
-                    }
+                  onClick={(e) => {
+                    const btn = e.currentTarget;
+                    const rect = btn.getBoundingClientRect();
+                    // position fixed uses viewport coordinates
+                    setNotifBtnPos({ 
+                      top: rect.bottom + 8, 
+                      left: rect.left 
+                    });
                     setNotificationsOpen(!notificationsOpen);
                   }} 
                   className="crystal-card p-2 sm:p-2.5 group flex-shrink-0" 
@@ -210,10 +213,11 @@ function HeaderContent() {
       {/* Notification Portal - renders outside header flow */}
       {notificationsOpen && notifBtnPos && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-2xl z-[9999]"
+          className="fixed w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-2xl"
           style={{ 
             top: notifBtnPos.top, 
             left: notifBtnPos.left,
+            zIndex: 2147483647, // Maximum z-index
             animation: 'dropdownIn 0.15s ease-out'
           }}
         >
