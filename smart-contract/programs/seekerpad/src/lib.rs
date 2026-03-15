@@ -51,7 +51,6 @@ pub struct WhitelistEntry {
     pub bump: u8,
 }
 
-// Initialize launch
 #[derive(Accounts)]
 pub struct InitializeLaunch<'info> {
     #[account(
@@ -88,7 +87,6 @@ pub struct InitializeLaunch<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-// Participate with SOL
 #[derive(Accounts)]
 pub struct ParticipateSol<'info> {
     #[account(mut)]
@@ -109,7 +107,6 @@ pub struct ParticipateSol<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-// Participate with USDC
 #[derive(Accounts)]
 pub struct ParticipateUsdc<'info> {
     #[account(mut)]
@@ -148,7 +145,6 @@ pub struct ParticipateUsdc<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-// Claim tokens
 #[derive(Accounts)]
 pub struct ClaimTokens<'info> {
     #[account(mut)]
@@ -158,28 +154,14 @@ pub struct ClaimTokens<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(
-        init,
-        payer = user,
-        seeds = [b"user_token", user.key().as_ref(), launch.mint.as_ref()],
-        bump,
-        associated_token::mint = launch.mint,
-        associated_token::authority = user
-    )]
-    pub user_token_account: Account<'info, TokenAccount>,
-    #[account(
         mut,
         seeds = [b"vault", launch.mint.as_ref()],
         bump = launch.bump
     )]
     pub vault: SystemAccount<'info>,
-    pub mint: AccountInfo<'info>,
-    pub token_program: Program<'info, Token>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
-    pub rent: Sysvar<'info, Rent>,
 }
 
-// Withdraw funds (authority only)
 #[derive(Accounts)]
 pub struct WithdrawFunds<'info> {
     #[account(mut)]
@@ -188,24 +170,9 @@ pub struct WithdrawFunds<'info> {
     pub authority: Signer<'info>,
     #[account(mut)]
     pub authority_sol_account: SystemAccount<'info>,
-    #[account(
-        mut,
-        seeds = [b"usdc_vault", launch.mint.as_ref()],
-        bump = launch.bump,
-        associated_token::mint = launch.usdc_mint,
-        associated_token::authority = launch.authority
-    )]
-    pub usdc_vault: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        address = launch.usdc_vault
-    )]
-    pub usdc_vault_system: SystemAccount<'info>,
-    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 
-// Add to whitelist
 #[derive(Accounts)]
 pub struct AddToWhitelist<'info> {
     #[account(
@@ -225,15 +192,12 @@ pub struct AddToWhitelist<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-// Update launch status
 #[derive(Accounts)]
 pub struct UpdateStatus<'info> {
     #[account(mut)]
     pub launch: Account<'info, Launch>,
     pub authority: Signer<'info>,
 }
-
-// ============ INSTRUCTIONS ============
 
 pub fn initialize_launch(
     ctx: Context<InitializeLaunch>,
@@ -285,11 +249,22 @@ pub fn participate_sol(ctx: Context<ParticipateSol>, amount: u64) -> Result<()> 
     let launch = &mut ctx.accounts.launch;
     let participation = &mut ctx.accounts.participation;
 
-    require!(launch.status == 1, ErrorCode::LaunchNotLive);
-    require!(clock::Clock::get()?.unix_timestamp >= launch.start_time, ErrorCode::NotStarted);
-    require!(clock::Clock::get()?.unix_timestamp <= launch.end_time, ErrorCode::Ended);
-    require!(amount >= launch.min_allocation, ErrorCode::BelowMinAllocation);
-    require!(amount <= launch.max_allocation, ErrorCode::AboveMaxAllocation);
+    if launch.status != 1 {
+        return Err(ErrorCode::LaunchNotLive.into());
+    }
+    let clock = clock::Clock::get()?.unix_timestamp;
+    if clock < launch.start_time {
+        return Err(ErrorCode::NotStarted.into());
+    }
+    if clock > launch.end_time {
+        return Err(ErrorCode::Ended.into());
+    }
+    if amount < launch.min_allocation {
+        return Err(ErrorCode::BelowMinAllocation.into());
+    }
+    if amount > launch.max_allocation {
+        return Err(ErrorCode::AboveMaxAllocation.into());
+    }
 
     let cpi_context = CpiContext::new(
         ctx.accounts.system_program.to_account_info(),
@@ -317,6 +292,7 @@ pub fn participate_sol(ctx: Context<ParticipateSol>, amount: u64) -> Result<()> 
     emit!(UserParticipated {
         user: ctx.accounts.user.key(),
         amount_sol: amount,
+        amount_usdc: 0,
         tokens_received,
     });
 
@@ -328,11 +304,22 @@ pub fn participate_usdc(ctx: Context<ParticipateUsdc>, amount: u64) -> Result<()
     let launch = &mut ctx.accounts.launch;
     let participation = &mut ctx.accounts.participation;
 
-    require!(launch.status == 1, ErrorCode::LaunchNotLive);
-    require!(clock::Clock::get()?.unix_timestamp >= launch.start_time, ErrorCode::NotStarted);
-    require!(clock::Clock::get()?.unix_timestamp <= launch.end_time, ErrorCode::Ended);
-    require!(amount >= launch.min_allocation, ErrorCode::BelowMinAllocation);
-    require!(amount <= launch.max_allocation, ErrorCode::AboveMaxAllocation);
+    if launch.status != 1 {
+        return Err(ErrorCode::LaunchNotLive.into());
+    }
+    let clock = clock::Clock::get()?.unix_timestamp;
+    if clock < launch.start_time {
+        return Err(ErrorCode::NotStarted.into());
+    }
+    if clock > launch.end_time {
+        return Err(ErrorCode::Ended.into());
+    }
+    if amount < launch.min_allocation {
+        return Err(ErrorCode::BelowMinAllocation.into());
+    }
+    if amount > launch.max_allocation {
+        return Err(ErrorCode::AboveMaxAllocation.into());
+    }
 
     let cpi_context = CpiContext::new(
         ctx.accounts.token_program.to_account_info(),
@@ -360,6 +347,7 @@ pub fn participate_usdc(ctx: Context<ParticipateUsdc>, amount: u64) -> Result<()
 
     emit!(UserParticipated {
         user: ctx.accounts.user.key(),
+        amount_sol: 0,
         amount_usdc: amount,
         tokens_received,
     });
@@ -372,9 +360,13 @@ pub fn claim_tokens(ctx: Context<ClaimTokens>) -> Result<()> {
     let participation = &mut ctx.accounts.participation;
     let launch = &mut ctx.accounts.launch;
 
-    let clock = clock::Clock::get()?;
-    require!(clock.unix_timestamp >= launch.tge_time, ErrorCode::TGENotReached);
-    require!(!participation.claimed, ErrorCode::AlreadyClaimed);
+    let clock = clock::Clock::get()?.unix_timestamp;
+    if clock < launch.tge_time {
+        return Err(ErrorCode::TGENotReached.into());
+    }
+    if participation.claimed {
+        return Err(ErrorCode::AlreadyClaimed.into());
+    }
 
     let seeds = &[&[b"launch", launch.mint.as_ref(), &[launch.bump]][..]];
     let signer = &[&seeds[..]];
@@ -408,13 +400,17 @@ pub fn claim_tokens(ctx: Context<ClaimTokens>) -> Result<()> {
 pub fn withdraw_funds(ctx: Context<WithdrawFunds>) -> Result<()> {
     let launch = &mut ctx.accounts.launch;
     
-    require!(ctx.accounts.authority.key() == launch.authority, ErrorCode::Unauthorized);
-    require!(!launch.funds_withdrawn, ErrorCode::FundsAlreadyWithdrawn);
+    if ctx.accounts.authority.key() != launch.authority {
+        return Err(ErrorCode::Unauthorized.into());
+    }
+    if launch.funds_withdrawn {
+        return Err(ErrorCode::FundsAlreadyWithdrawn.into());
+    }
 
-    let vault_balance = ctx.accounts.launch.to_account_info().lamports();
+    let vault_balance = ctx.accounts.vault.to_account_info().lamports();
     if vault_balance > 0 {
         **ctx.accounts.authority_sol_account.lamports.borrow_mut() += vault_balance;
-        **ctx.accounts.launch.to_account_info().lamports.borrow_mut() = 0;
+        **ctx.accounts.vault.to_account_info().lamports.borrow_mut() = 0;
     }
 
     launch.funds_withdrawn = true;
@@ -446,7 +442,9 @@ pub fn add_to_whitelist(ctx: Context<AddToWhitelist>, max_allocation: u64) -> Re
 
 pub fn update_launch_status(ctx: Context<UpdateStatus>, new_status: u8) -> Result<()> {
     let launch = &mut ctx.accounts.launch;
-    require!(ctx.accounts.authority.key() == launch.authority, ErrorCode::Unauthorized);
+    if ctx.accounts.authority.key() != launch.authority {
+        return Err(ErrorCode::Unauthorized.into());
+    }
     launch.status = new_status;
 
     emit!(StatusUpdated {
@@ -457,8 +455,6 @@ pub fn update_launch_status(ctx: Context<UpdateStatus>, new_status: u8) -> Resul
     msg!("Launch status updated to: {}", new_status);
     Ok(())
 }
-
-// ============ EVENTS ============
 
 #[event]
 pub struct LaunchInitialized {
@@ -503,9 +499,7 @@ pub struct StatusUpdated {
     pub status: u8,
 }
 
-// ============ ERRORS ============
-
-#[derive(Error, Debug, Copy, Clone)]
+#[derive(Error, Debug, Clone, PartialEq)]
 pub enum ErrorCode {
     #[error("Launch is not live")]
     LaunchNotLive,
