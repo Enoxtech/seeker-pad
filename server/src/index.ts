@@ -9,6 +9,7 @@ import launchesRouter from './routes/launches';
 import participationRouter from './routes/participation';
 import eligibilityRouter from './routes/eligibility';
 import nftRouter from './routes/nft';
+import nftDropRouter from './routes/nft-drop';
 import walletRouter from './routes/wallet';
 import aiRouter from './routes/ai';
 import applicationsRouter from './routes/applications';
@@ -47,6 +48,7 @@ async function start() {
   app.use('/api/participation', participationRouter);
   app.use('/api/eligibility', eligibilityRouter);
   app.use('/api/nft', nftRouter);
+  app.use('/api/nft-drops', nftDropRouter);
   app.use('/api/wallet', walletRouter);
   app.use('/api/ai', aiRouter);
   app.use('/api/applications', applicationsRouter);
