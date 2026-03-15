@@ -1,21 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import dynamic from 'next/dynamic'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js'
 import { getUserParticipation, createParticipation } from '@/data/launches'
-import Link from 'next/link'
-
-// Dynamic imports for wallet UI components
-const WalletMultiButton = dynamic(
-  () => import('@solana/wallet-adapter-react-ui').then(mod => mod.WalletMultiButton),
-  { ssr: false }
-)
-const WalletDisconnectButton = dynamic(
-  () => import('@solana/wallet-adapter-react-ui').then(mod => mod.WalletDisconnectButton),
-  { ssr: false }
-)
 
 export default function LaunchDetail({ params }: { params: { id: string } }) {
   const { id } = params
@@ -173,24 +161,6 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-pink-600/10 rounded-full blur-[100px]"></div>
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.02%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-50"></div>
       </div>
-
-      {/* Header */}
-      <header className="relative z-10 border-b border-white/5 backdrop-blur-xl bg-black/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <Link href="/launchpad" className="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent animate-gradient">
-            ⚡ SeekerPad
-          </Link>
-          <div className="flex items-center gap-4">
-            <nav className="hidden md:flex items-center gap-6 mr-4">
-              <Link href="/launchpad" className="text-gray-400 hover:text-white transition-colors text-sm">Launches</Link>
-              <Link href="/nft" className="text-gray-400 hover:text-white transition-colors text-sm">NFT</Link>
-              <Link href="/portfolio" className="text-gray-400 hover:text-white transition-colors text-sm">Portfolio</Link>
-            </nav>
-            <WalletMultiButton />
-            {connected && <WalletDisconnectButton />}
-          </div>
-        </div>
-      </header>
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
@@ -477,13 +447,6 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 mt-16 py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-          <p>© 2026 SeekerPad — Built on Solana</p>
-        </div>
-      </footer>
     </div>
   )
 }
