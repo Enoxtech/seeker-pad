@@ -115,29 +115,25 @@ function NFTDropsContent() {
           <h1 className="text-2xl font-bold mb-4">NFT Drops Management</h1>
           <p className="text-gray-400 mb-6">Connect your wallet to manage NFT drops</p>
           
-          {/* Wallet connect prompt */}
-          <div className="bg-gray-800 rounded-lg p-4 mb-4">
-            <p className="text-sm text-gray-400 mb-3">
-              Click the <span className="text-white font-medium">wallet button in the header</span> to connect
+          {/* Demo Mode - Primary option */}
+          <div className="bg-purple-900/30 border border-purple-700 rounded-lg p-6 mb-6">
+            <h3 className="font-semibold mb-2">🚀 Quick Access</h3>
+            <p className="text-sm text-gray-300 mb-4">
+              Use Demo Mode to test the NFT Drops admin interface without connecting your wallet
             </p>
-            <div className="flex justify-center">
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent('openWalletModal'))}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-lg font-medium"
-              >
-                Connect Wallet
-              </button>
-            </div>
+            <button
+              onClick={enableDemoMode}
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium w-full"
+            >
+              Continue in Demo Mode
+            </button>
           </div>
           
-          <div className="text-gray-500 text-sm mb-2">or</div>
-          
-          <button
-            onClick={enableDemoMode}
-            className="text-gray-400 hover:text-white underline"
-          >
-            Continue in Demo Mode
-          </button>
+          {/* Wallet connect - Secondary */}
+          <div className="text-gray-500 text-sm">
+            <p className="mb-2">Or connect your wallet via the header</p>
+            <p className="text-gray-600">Click the wallet icon in the top right corner →</p>
+          </div>
         </div>
       </div>
     );
