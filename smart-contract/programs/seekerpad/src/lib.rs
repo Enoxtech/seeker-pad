@@ -499,24 +499,24 @@ pub struct StatusUpdated {
     pub status: u8,
 }
 
-#[derive(Error, Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ErrorCode {
-    #[error("Launch is not live")]
+    #[msg("Launch is not live")]
     LaunchNotLive,
-    #[error("Launch has not started")]
+    #[msg("Launch has not started")]
     NotStarted,
-    #[error("Launch has ended")]
+    #[msg("Launch has ended")]
     Ended,
-    #[error("Below minimum allocation")]
+    #[msg("Below minimum allocation")]
     BelowMinAllocation,
-    #[error("Above maximum allocation")]
+    #[msg("Above maximum allocation")]
     AboveMaxAllocation,
-    #[error("TGE not yet reached")]
+    #[msg("TGE not yet reached")]
     TGENotReached,
-    #[error("Already claimed")]
+    #[msg("Already claimed")]
     AlreadyClaimed,
-    #[error("Unauthorized")]
+    #[msg("Unauthorized")]
     Unauthorized,
-    #[error("Funds already withdrawn")]
+    #[msg("Funds already withdrawn")]
     FundsAlreadyWithdrawn,
 }
