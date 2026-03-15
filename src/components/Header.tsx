@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useWallet, formatAddress } from './wallet/useWallet';
 import WalletButton from './wallet/WalletButton';
@@ -210,8 +209,8 @@ function HeaderContent() {
         )}
       </div>
 
-      {/* Notification Portal - renders outside header flow */}
-      {notificationsOpen && notifBtnPos && typeof document !== 'undefined' && createPortal(
+      {/* Notification Dropdown - renders inside header */}
+      {notificationsOpen && notifBtnPos && (
         <div 
           className="fixed w-72 sm:w-80 crystal-card rounded-xl overflow-hidden shadow-2xl"
           style={{ 
@@ -264,8 +263,7 @@ function HeaderContent() {
               <button onClick={markAllAsRead} className="w-full text-center text-purple-400 text-sm hover:text-purple-300 font-medium">Mark All as Read</button>
             </div>
           )}
-        </div>,
-        document.body
+        </div>
       )}
 
     </header>
