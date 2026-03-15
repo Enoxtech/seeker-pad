@@ -1,8 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import dynamic from 'next/dynamic';
+import { useWallet } from '@/components/wallet/WalletContext';
+
+// Dynamic import for wallet button to avoid SSR issues
+const WalletMultiButton = dynamic(
+  () => import('@solana/wallet-adapter-react-ui').then(mod => mod.WalletMultiButton),
+  { ssr: false }
+);
 
 interface NFTDrop {
   id: string;
@@ -27,7 +33,7 @@ interface NFTDrop {
 const API_BASE = '';
 
 export default function NFTDropsAdmin() {
-  const { publicKey } = useWallet();
+  const { wallet } = useWallet();
   const [drops, setDrops] = useState<NFTDrop[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -174,7 +180,7 @@ export default function NFTDropsAdmin() {
     });
   };
 
-  if (!publicKey) {
+  if (!wallet.connected) {
     return (
       <div className="p-8 text-center">
         <h1 className="text-2xl font-bold mb-4">NFT Drops Management</h1>
