@@ -180,20 +180,56 @@ export default function NFTDropsAdmin() {
     });
   };
 
-  if (!wallet.connected) {
+  // For demo: check localStorage or allow bypass
+  const [demoMode, setDemoMode] = useState(false);
+
+  useEffect(() => {
+    // Check for demo mode
+    const demo = localStorage.getItem('nftAdminDemo');
+    if (demo === 'true') setDemoMode(true);
+  }, []);
+
+  const enableDemoMode = () => {
+    localStorage.setItem('nftAdminDemo', 'true');
+    setDemoMode(true);
+  };
+
+  const showAdmin = wallet.connected || demoMode;
+
+  if (!showAdmin) {
     return (
       <div className="p-8 text-center">
         <h1 className="text-2xl font-bold mb-4">NFT Drops Management</h1>
         <p className="text-gray-400 mb-6">Connect your wallet to manage NFT drops</p>
-        <div className="flex justify-center">
+        <div className="flex justify-center mb-4">
           <WalletMultiButton className="!bg-purple-600 hover:!bg-purple-700 !text-white !rounded-lg" />
         </div>
+        <button
+          onClick={enableDemoMode}
+          className="text-sm text-gray-500 hover:text-gray-400 underline"
+        >
+          Or continue in Demo Mode
+        </button>
       </div>
     );
   }
 
   return (
     <div className="p-6">
+      {demoMode && (
+        <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-3 mb-4 flex justify-between items-center">
+          <span className="text-yellow-300 text-sm">Demo Mode - Wallet not connected</span>
+          <button
+            onClick={() => {
+              localStorage.removeItem('nftAdminDemo');
+              window.location.reload();
+            }}
+            className="text-xs text-yellow-400 hover:text-yellow-300"
+          >
+            Connect Wallet
+          </button>
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">NFT Drops Management</h1>
         <button
