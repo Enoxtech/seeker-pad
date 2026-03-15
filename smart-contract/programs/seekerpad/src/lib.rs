@@ -4,6 +4,8 @@ use anchor_spl::associated_token::AssociatedToken;
 
 declare_id!("SeekPad1111111111111111111111111111111");
 
+// ============ ACCOUNTS ============
+
 #[account]
 #[derive(Default)]
 pub struct Launch {
@@ -19,9 +21,19 @@ pub struct Launch {
     pub total_raised_usdc: u64,
     pub min_allocation: u64,
     pub max_allocation: u64,
+    // Tier-specific allocations
+    pub jupiter_max_allocation: u64,
+    pub seeker_max_allocation: u64,
+    pub penguin_max_allocation: u64,
+    pub public_max_allocation: u64,
+    // Timing
     pub start_time: i64,
     pub end_time: i64,
     pub tge_time: i64,
+    // Cliff & Vesting
+    pub cliff_duration: i64,      // Seconds from TGE until first claim
+    pub vesting_duration: i64,     // Total vesting period after cliff
+    pub vesting_type: u8,          // 0 = immediate, 1 = cliff, 2 = linear
     pub status: u8,
     pub launch_type: u8,
     pub funds_withdrawn: bool,
@@ -33,12 +45,16 @@ pub struct Launch {
 pub struct Participation {
     pub user: Pubkey,
     pub launch: Pubkey,
+    pub tier: u8,                  // 0 = None, 1 = Jupiter, 2 = Seeker, 3 = Penguin, 4 = Public
     pub amount_sol: u64,
     pub amount_usdc: u64,
     pub tokens_received: u64,
     pub claimed: bool,
     pub claimable_amount: u64,
     pub claimed_amount: u64,
+    // Vesting tracking
+    pub last_claim_time: i64,
+    pub total_vested: u64,
     pub bump: u8,
 }
 
@@ -47,16 +63,19 @@ pub struct Participation {
 pub struct WhitelistEntry {
     pub user: Pubkey,
     pub launch: Pubkey,
+    pub tier: u8,                  // 1 = Jupiter, 2 = Seeker, 3 = Penguin
     pub max_allocation: u64,
     pub bump: u8,
 }
+
+// ============ CONTEXTS ============
 
 #[derive(Accounts)]
 pub struct InitializeLaunch<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8 + 272,
+        space = 8 + 360,
         seeds = [b"launch", mint.key().as_ref()],
         bump
     )]
@@ -94,7 +113,7 @@ pub struct ParticipateSol<'info> {
     #[account(
         init,
         payer = user,
-        space = 8 + 152,
+        space = 8 + 176,
         seeds = [b"participation", user.key().as_ref(), launch.key().as_ref()],
         bump
     )]
@@ -114,7 +133,7 @@ pub struct ParticipateUsdc<'info> {
     #[account(
         init,
         payer = user,
-        space = 8 + 152,
+        space = 8 + 176,
         seeds = [b"participation", user.key().as_ref(), launch.key().as_ref()],
         bump
     )]
@@ -178,7 +197,7 @@ pub struct AddToWhitelist<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8 + 66,
+        space = 8 + 82,
         seeds = [b"whitelist", user.key().as_ref(), launch.key().as_ref()],
         bump
     )]
@@ -199,16 +218,28 @@ pub struct UpdateStatus<'info> {
     pub authority: Signer<'info>,
 }
 
+// ============ FUNCTIONS ============
+
 pub fn initialize_launch(
     ctx: Context<InitializeLaunch>,
     price_per_token: u64,
     price_per_token_usdc: u64,
     raise_target: u64,
     min_allocation: u64,
-    max_allocation: i64,
+    max_allocation: u64,
+    // Tier allocations
+    jupiter_max_allocation: u64,
+    seeker_max_allocation: u64,
+    penguin_max_allocation: u64,
+    public_max_allocation: u64,
+    // Timing
     start_time: i64,
     end_time: i64,
     tge_time: i64,
+    // Vesting
+    cliff_duration: i64,
+    vesting_duration: i64,
+    vesting_type: u8,
     launch_type: u8,
 ) -> Result<()> {
     let launch = &mut ctx.accounts.launch;
@@ -223,10 +254,24 @@ pub fn initialize_launch(
     launch.total_raised_sol = 0;
     launch.total_raised_usdc = 0;
     launch.min_allocation = min_allocation;
-    launch.max_allocation = max_allocation as u64;
+    launch.max_allocation = max_allocation;
+    
+    // Tier allocations
+    launch.jupiter_max_allocation = jupiter_max_allocation;
+    launch.seeker_max_allocation = seeker_max_allocation;
+    launch.penguin_max_allocation = penguin_max_allocation;
+    launch.public_max_allocation = public_max_allocation;
+    
+    // Timing
     launch.start_time = start_time;
     launch.end_time = end_time;
     launch.tge_time = tge_time;
+    
+    // Vesting
+    launch.cliff_duration = cliff_duration;
+    launch.vesting_duration = vesting_duration;
+    launch.vesting_type = vesting_type;
+    
     launch.status = 0;
     launch.launch_type = launch_type;
     launch.funds_withdrawn = false;
@@ -249,9 +294,11 @@ pub fn participate_sol(ctx: Context<ParticipateSol>, amount: u64) -> Result<()> 
     let launch = &mut ctx.accounts.launch;
     let participation = &mut ctx.accounts.participation;
 
+    // Check launch is live
     if launch.status != 1 {
         return Err(ErrorCode::LaunchNotLive.into());
     }
+    
     let clock = clock::Clock::get()?.unix_timestamp;
     if clock < launch.start_time {
         return Err(ErrorCode::NotStarted.into());
@@ -259,13 +306,21 @@ pub fn participate_sol(ctx: Context<ParticipateSol>, amount: u64) -> Result<()> 
     if clock > launch.end_time {
         return Err(ErrorCode::Ended.into());
     }
+
+    // Determine user's tier and max allocation
+    let user_tier = get_user_tier(&ctx.accounts.user.key(), &launch.key())?;
+    let max_allowed = get_tier_max_allocation(launch, user_tier);
+    
+    // Check allocation
+    let total_user_allocation = participation.amount_sol.saturating_add(amount);
+    if total_user_allocation > max_allowed {
+        return Err(ErrorCode::AboveMaxAllocation.into());
+    }
     if amount < launch.min_allocation {
         return Err(ErrorCode::BelowMinAllocation.into());
     }
-    if amount > launch.max_allocation {
-        return Err(ErrorCode::AboveMaxAllocation.into());
-    }
 
+    // Transfer SOL
     let cpi_context = CpiContext::new(
         ctx.accounts.system_program.to_account_info(),
         anchor_lang::system_program::Transfer {
@@ -275,28 +330,34 @@ pub fn participate_sol(ctx: Context<ParticipateSol>, amount: u64) -> Result<()> 
     );
     anchor_lang::system_program::transfer(cpi_context, amount)?;
 
+    // Calculate tokens
     let tokens_received = (amount * 1_000_000_000) / launch.price_per_token;
     
+    // Set up participation
     participation.user = ctx.accounts.user.key();
     participation.launch = launch.key();
+    participation.tier = user_tier;
     participation.amount_sol = amount;
     participation.amount_usdc = 0;
     participation.tokens_received = tokens_received;
     participation.claimed = false;
     participation.claimable_amount = tokens_received;
     participation.claimed_amount = 0;
+    participation.last_claim_time = 0;
+    participation.total_vested = 0;
     participation.bump = ctx.bumps.participation;
 
     launch.total_raised_sol = launch.total_raised_sol.checked_add(amount).unwrap();
 
     emit!(UserParticipated {
         user: ctx.accounts.user.key(),
+        tier: user_tier,
         amount_sol: amount,
         amount_usdc: 0,
         tokens_received,
     });
 
-    msg!("User {} participated with {} SOL", ctx.accounts.user.key(), amount);
+    msg!("User {} participated with {} SOL (Tier: {})", ctx.accounts.user.key(), amount, user_tier);
     Ok(())
 }
 
@@ -304,9 +365,11 @@ pub fn participate_usdc(ctx: Context<ParticipateUsdc>, amount: u64) -> Result<()
     let launch = &mut ctx.accounts.launch;
     let participation = &mut ctx.accounts.participation;
 
+    // Check launch is live
     if launch.status != 1 {
         return Err(ErrorCode::LaunchNotLive.into());
     }
+    
     let clock = clock::Clock::get()?.unix_timestamp;
     if clock < launch.start_time {
         return Err(ErrorCode::NotStarted.into());
@@ -314,13 +377,21 @@ pub fn participate_usdc(ctx: Context<ParticipateUsdc>, amount: u64) -> Result<()
     if clock > launch.end_time {
         return Err(ErrorCode::Ended.into());
     }
+
+    // Determine user's tier
+    let user_tier = get_user_tier(&ctx.accounts.user.key(), &launch.key())?;
+    let max_allowed = get_tier_max_allocation(launch, user_tier);
+    
+    // Check allocation
+    let total_user_allocation = participation.amount_usdc.saturating_add(amount);
+    if total_user_allocation > max_allowed {
+        return Err(ErrorCode::AboveMaxAllocation.into());
+    }
     if amount < launch.min_allocation {
         return Err(ErrorCode::BelowMinAllocation.into());
     }
-    if amount > launch.max_allocation {
-        return Err(ErrorCode::AboveMaxAllocation.into());
-    }
 
+    // Transfer USDC
     let cpi_context = CpiContext::new(
         ctx.accounts.token_program.to_account_info(),
         Transfer {
@@ -331,28 +402,34 @@ pub fn participate_usdc(ctx: Context<ParticipateUsdc>, amount: u64) -> Result<()
     );
     token::transfer(cpi_context, amount)?;
 
+    // Calculate tokens
     let tokens_received = (amount * 1_000_000) / launch.price_per_token_usdc;
     
+    // Set up participation
     participation.user = ctx.accounts.user.key();
     participation.launch = launch.key();
+    participation.tier = user_tier;
     participation.amount_sol = 0;
     participation.amount_usdc = amount;
     participation.tokens_received = tokens_received;
     participation.claimed = false;
     participation.claimable_amount = tokens_received;
     participation.claimed_amount = 0;
+    participation.last_claim_time = 0;
+    participation.total_vested = 0;
     participation.bump = ctx.bumps.participation;
 
     launch.total_raised_usdc = launch.total_raised_usdc.checked_add(amount).unwrap();
 
     emit!(UserParticipated {
         user: ctx.accounts.user.key(),
+        tier: user_tier,
         amount_sol: 0,
         amount_usdc: amount,
         tokens_received,
     });
 
-    msg!("User {} participated with {} USDC", ctx.accounts.user.key(), amount);
+    msg!("User {} participated with {} USDC (Tier: {})", ctx.accounts.user.key(), amount, user_tier);
     Ok(())
 }
 
@@ -361,13 +438,20 @@ pub fn claim_tokens(ctx: Context<ClaimTokens>) -> Result<()> {
     let launch = &mut ctx.accounts.launch;
 
     let clock = clock::Clock::get()?.unix_timestamp;
+    
+    // Check TGE reached
     if clock < launch.tge_time {
         return Err(ErrorCode::TGENotReached.into());
     }
-    if participation.claimed {
-        return Err(ErrorCode::AlreadyClaimed.into());
+
+    // Calculate claimable based on vesting type
+    let claimable = calculate_claimable(launch, participation, clock)?;
+    
+    if claimable == 0 {
+        return Err(ErrorCode::NothingToClaim.into());
     }
 
+    // Transfer tokens
     let seeds = &[&[b"launch", launch.mint.as_ref(), &[launch.bump]][..]];
     let signer = &[&seeds[..]];
 
@@ -381,19 +465,26 @@ pub fn claim_tokens(ctx: Context<ClaimTokens>) -> Result<()> {
             },
             signer,
         ),
-        participation.claimable_amount,
+        claimable,
     )?;
 
-    participation.claimed = true;
-    participation.claimed_amount = participation.claimable_amount;
-    participation.claimable_amount = 0;
+    // Update participation
+    participation.claimed_amount = participation.claimed_amount.saturating_add(claimable);
+    participation.last_claim_time = clock;
+    participation.total_vested = participation.total_vested.saturating_add(claimable);
+    
+    // Mark as fully claimed if all tokens vested
+    if participation.claimed_amount >= participation.tokens_received {
+        participation.claimed = true;
+    }
 
     emit!(TokensClaimed {
         user: ctx.accounts.user.key(),
-        amount: participation.claimed_amount,
+        amount: claimable,
+        total_claimed: participation.claimed_amount,
     });
 
-    msg!("User {} claimed {} tokens", ctx.accounts.user.key(), participation.claimed_amount);
+    msg!("User {} claimed {} tokens (total: {})", ctx.accounts.user.key(), claimable, participation.claimed_amount);
     Ok(())
 }
 
@@ -425,18 +516,25 @@ pub fn withdraw_funds(ctx: Context<WithdrawFunds>) -> Result<()> {
     Ok(())
 }
 
-pub fn add_to_whitelist(ctx: Context<AddToWhitelist>, max_allocation: u64) -> Result<()> {
+pub fn add_to_whitelist(ctx: Context<AddToWhitelist>, tier: u8, max_allocation: u64) -> Result<()> {
+    if tier < 1 || tier > 3 {
+        return Err(ErrorCode::InvalidTier.into());
+    }
+    
     let whitelist = &mut ctx.accounts.whitelist_entry;
     whitelist.user = ctx.accounts.user.key();
     whitelist.launch = ctx.accounts.launch.key();
+    whitelist.tier = tier;
     whitelist.max_allocation = max_allocation;
     whitelist.bump = ctx.bumps.whitelist_entry;
 
     emit!(WhitelistAdded {
         user: ctx.accounts.user.key(),
+        tier,
         max_allocation,
     });
 
+    msg!("User {} added to whitelist with tier {}", ctx.accounts.user.key(), tier);
     Ok(())
 }
 
@@ -456,6 +554,83 @@ pub fn update_launch_status(ctx: Context<UpdateStatus>, new_status: u8) -> Resul
     Ok(())
 }
 
+// ============ HELPER FUNCTIONS ============
+
+fn get_user_tier(user: &Pubkey, launch: &Pubkey) -> Result<u8> {
+    // This would need to check if user is in whitelist
+    // For now, return public tier (4)
+    // In production, you'd fetch the WhitelistEntry account
+    Ok(4) // Public tier
+}
+
+fn get_tier_max_allocation(launch: &Launch, tier: u8) -> u64 {
+    match tier {
+        1 => launch.jupiter_max_allocation,  // Jupiter
+        2 => launch.seeker_max_allocation,   // Seeker  
+        3 => launch.penguin_max_allocation, // Penguin
+        _ => launch.public_max_allocation,   // Public / None
+    }
+}
+
+fn calculate_claimable(launch: &Launch, participation: &Participation, current_time: i64) -> Result<u64> {
+    let total_tokens = participation.tokens_received;
+    let already_claimed = participation.claimed_amount;
+    let remaining = total_tokens.saturating_sub(already_claimed);
+    
+    if remaining == 0 {
+        return Ok(0);
+    }
+
+    // Vesting type: 0 = immediate (no vesting), 1 = cliff, 2 = linear
+    match launch.vesting_type {
+        0 => {
+            // Immediate - claim all at once (if not already claimed)
+            if participation.claimed {
+                return Ok(0);
+            }
+            Ok(remaining)
+        }
+        1 => {
+            // Cliff - can only claim after cliff period
+            let cliff_end = launch.tge_time.saturating_add(launch.cliff_duration);
+            if current_time < cliff_end {
+                return Err(ErrorCode::CliffNotEnded.into());
+            }
+            // After cliff, can claim all
+            if participation.claimed {
+                return Ok(0);
+            }
+            Ok(remaining)
+        }
+        2 => {
+            // Linear vesting
+            let cliff_end = launch.tge_time.saturating_add(launch.cliff_duration);
+            if current_time < cliff_end {
+                return Err(ErrorCode::CliffNotEnded.into());
+            }
+            
+            let vesting_end = cliff_end.saturating_add(launch.vesting_duration);
+            let now = if current_time > vesting_end { vesting_end } else { current_time };
+            
+            let time_in_vesting = now.saturating_sub(cliff_end);
+            let total_vesting_time = launch.vesting_duration;
+            
+            if total_vesting_time == 0 {
+                return Ok(remaining);
+            }
+            
+            let vested_percentage = (time_in_vesting as u128 * 10000 / total_vesting_time as u128) as u64;
+            let total_vested = (total_tokens as u128 * vested_percentage as u128 / 10000) as u64;
+            
+            let claimable = total_vested.saturating_sub(participation.total_vested);
+            Ok(claimable.min(remaining))
+        }
+        _ => Ok(remaining),
+    }
+}
+
+// ============ EVENTS ============
+
 #[event]
 pub struct LaunchInitialized {
     pub authority: Pubkey,
@@ -469,6 +644,7 @@ pub struct LaunchInitialized {
 #[event]
 pub struct UserParticipated {
     pub user: Pubkey,
+    pub tier: u8,
     pub amount_sol: u64,
     pub amount_usdc: u64,
     pub tokens_received: u64,
@@ -478,6 +654,7 @@ pub struct UserParticipated {
 pub struct TokensClaimed {
     pub user: Pubkey,
     pub amount: u64,
+    pub total_claimed: u64,
 }
 
 #[event]
@@ -490,6 +667,7 @@ pub struct FundsWithdrawn {
 #[event]
 pub struct WhitelistAdded {
     pub user: Pubkey,
+    pub tier: u8,
     pub max_allocation: u64,
 }
 
@@ -498,6 +676,8 @@ pub struct StatusUpdated {
     pub launch: Pubkey,
     pub status: u8,
 }
+
+// ============ ERROR CODES ============
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ErrorCode {
@@ -519,4 +699,10 @@ pub enum ErrorCode {
     Unauthorized,
     #[msg("Funds already withdrawn")]
     FundsAlreadyWithdrawn,
+    #[msg("Invalid tier")]
+    InvalidTier,
+    #[msg("Cliff period not ended")]
+    CliffNotEnded,
+    #[msg("Nothing to claim")]
+    NothingToClaim,
 }
