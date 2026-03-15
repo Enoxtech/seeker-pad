@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js'
-import { getUserParticipation, createParticipation } from '@/data/launches'
+import { getUserParticipation, createParticipation, claimTokens } from '@/data/launches'
 
 export default function LaunchDetail({ params }: { params: { id: string } }) {
   const { id } = params
@@ -15,8 +15,10 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
   const [amountSol, setAmountSol] = useState('')
   const [purchasedAmount, setPurchasedAmount] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isClaiming, setIsClaiming] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [hasClaimed, setHasClaimed] = useState(false)
 
   // Fetch launch data
   useEffect(() => {
@@ -41,6 +43,7 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
           setParticipation(part)
           if (part) {
             setPurchasedAmount(Number(part.amount))
+            setHasClaimed(part.status === 'claimed')
           }
         } catch (err) {
           console.error('Failed to fetch participation:', err)
@@ -80,12 +83,11 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
 
     try {
       const mockVault = new PublicKey('Gq3q3J7L9m8V6F5qK2p4R8t3Y1n6B7c4D6e9F3g2H1k5')
-      const vaultPubkey = mockVault
 
       const transaction = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: new PublicKey(publicKey.toBase58()),
-          toPubkey: vaultPubkey,
+          toPubkey: mockVault,
           lamports: Math.floor(amountSolNum * 1e9),
         })
       )
@@ -104,7 +106,7 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
           txSignature: signature,
         })
 
-        setSuccess(`Transaction sent! Signature: ${signature.slice(0, 8)}...`)
+        setSuccess(`🎉 Transaction sent! Signature: ${signature.slice(0, 8)}...`)
         setPurchasedAmount((prev) => (prev || 0) + amountSolNum)
         setAmountSol('')
       } catch (txError: any) {
@@ -127,6 +129,25 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
     }
   }
 
+  const handleClaim = async () => {
+    if (!participation) return
+    
+    setIsClaiming(true)
+    setError('')
+    setSuccess('')
+    
+    try {
+      await claimTokens(participation.id, `claim_${Date.now()}`)
+      setSuccess('🎉 Tokens claimed successfully!')
+      setHasClaimed(true)
+    } catch (err: any) {
+      console.error('Claim error:', err)
+      setError(err.message || 'Claim failed')
+    } finally {
+      setIsClaiming(false)
+    }
+  }
+
   if (!launch) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
@@ -144,6 +165,7 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
 
   const tokenPrice = Number(launch.launchPrice)
   const tokenAmount = amountSol ? (Number(amountSol) / tokenPrice).toLocaleString() : '0'
+  const purchasedTokenAmount = purchasedAmount ? (purchasedAmount / tokenPrice).toLocaleString() : '0'
 
   // Determine gradient based on launch type
   const getGradient = () => {
@@ -152,6 +174,8 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
     if (launch.status === 'upcoming') return 'from-blue-500 via-cyan-500 to-blue-500'
     return 'from-gray-500 via-slate-500 to-gray-500'
   }
+
+  const isLaunchEnded = launch.status === 'ended'
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
@@ -166,7 +190,6 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
         {/* Hero Section */}
         <div className="mb-12">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white/5 to-white/0 border border-white/10 backdrop-blur-sm">
-            {/* Animated gradient border */}
             <div className={`absolute inset-0 bg-gradient-to-r ${getGradient()} opacity-20`}></div>
             
             <div className="relative p-8 md:p-12">
@@ -257,7 +280,7 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Purchase Card */}
+          {/* Main Card */}
           <div className="lg:col-span-2">
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white/5 to-white/0 border border-white/10 backdrop-blur-sm">
               <div className={`absolute inset-0 bg-gradient-to-r ${getGradient()} opacity-10`}></div>
@@ -265,7 +288,7 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
               <div className="relative p-8">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
                   <span className="w-2 h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
-                  Participate in Sale
+                  {isLaunchEnded ? 'Token Claim' : 'Participate in Sale'}
                 </h2>
 
                 {/* Progress Bar */}
@@ -298,74 +321,122 @@ export default function LaunchDetail({ params }: { params: { id: string } }) {
                   </div>
                 </div>
 
+                {/* User Participation Status */}
                 {purchasedAmount !== null && (
                   <div className="mb-6 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">🎉</span>
                       <div>
                         <p className="text-green-400 font-semibold">You have participated!</p>
-                        <p className="text-gray-400 text-sm">Your contribution: {purchasedAmount} SOL</p>
+                        <p className="text-gray-400 text-sm">Your contribution: {purchasedAmount} SOL → {purchasedTokenAmount} {launch.symbol}</p>
                       </div>
                     </div>
                   </div>
                 )}
 
+                {/* Connected Wallet - Show Purchase Form or Claim */}
                 {connected ? (
                   <div className="space-y-4">
-                    <div className="relative">
-                      <label className="block text-sm text-gray-400 mb-2">Amount (SOL)</label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          value={amountSol}
-                          onChange={(e) => setAmountSol(e.target.value)}
-                          placeholder="0.00"
-                          className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all text-lg"
-                        />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">SOL</span>
+                    {isLaunchEnded ? (
+                      // Claim Section for Ended Launches
+                      <div className="space-y-4">
+                        {hasClaimed ? (
+                          <div className="p-6 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl text-center">
+                            <span className="text-4xl mb-3 block">✅</span>
+                            <p className="text-green-400 font-bold text-lg">Tokens Already Claimed!</p>
+                            <p className="text-gray-400 text-sm mt-1">{purchasedTokenAmount} {launch.symbol} received</p>
+                          </div>
+                        ) : purchasedAmount !== null ? (
+                          <>
+                            <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">🎁</span>
+                                <div>
+                                  <p className="text-purple-400 font-semibold">Tokens Ready to Claim!</p>
+                                  <p className="text-gray-400 text-sm">Claim your {purchasedTokenAmount} {launch.symbol}</p>
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              onClick={handleClaim}
+                              disabled={isClaiming}
+                              className="w-full py-4 bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 hover:from-green-500 hover:via-emerald-500 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-green-500/25"
+                            >
+                              {isClaiming ? (
+                                <span className="flex items-center justify-center gap-2">
+                                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                  Claiming...
+                                </span>
+                              ) : (
+                                '🎁 Claim Tokens'
+                              )}
+                            </button>
+                          </>
+                        ) : (
+                          <div className="p-6 bg-white/5 rounded-xl text-center">
+                            <p className="text-gray-400">You didn't participate in this launch</p>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    ) : (
+                      // Purchase Form for Live/Upcoming Launches
+                      <>
+                        <div className="relative">
+                          <label className="block text-sm text-gray-400 mb-2">Amount (SOL)</label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              value={amountSol}
+                              onChange={(e) => setAmountSol(e.target.value)}
+                              placeholder="0.00"
+                              className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all text-lg"
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">SOL</span>
+                          </div>
+                        </div>
 
-                    <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/5">
-                      <span className="text-gray-400">You will receive:</span>
-                      <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                        {tokenAmount} {launch.symbol}
-                      </span>
-                    </div>
+                        <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/5">
+                          <span className="text-gray-400">You will receive:</span>
+                          <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                            {tokenAmount} {launch.symbol}
+                          </span>
+                        </div>
 
-                    {error && (
-                      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                        <p className="text-red-400 text-sm">⚠️ {error}</p>
-                      </div>
+                        {error && (
+                          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                            <p className="text-red-400 text-sm">⚠️ {error}</p>
+                          </div>
+                        )}
+
+                        {success && (
+                          <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                            <p className="text-green-400 text-sm">{success}</p>
+                          </div>
+                        )}
+
+                        <button
+                          onClick={handleBuyTokens}
+                          disabled={isLoading}
+                          className="w-full py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-purple-500/25"
+                        >
+                          {isLoading ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                              Processing...
+                            </span>
+                          ) : (
+                            '🔥 Buy Tokens'
+                          )}
+                        </button>
+                      </>
                     )}
-
-                    {success && (
-                      <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                        <p className="text-green-400 text-sm">✅ {success}</p>
-                      </div>
-                    )}
-
-                    <button
-                      onClick={handleBuyTokens}
-                      disabled={isLoading}
-                      className="w-full py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-purple-500/25"
-                    >
-                      {isLoading ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                          Processing...
-                        </span>
-                      ) : (
-                        '🔥 Buy Tokens'
-                      )}
-                    </button>
                   </div>
                 ) : (
                   <div className="text-center py-8">
                     <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
                       <span className="text-4xl">🔌</span>
                     </div>
-                    <p className="text-gray-400 mb-6">Connect your wallet to participate in the token sale</p>
+                    <p className="text-gray-400 mb-6">{isLaunchEnded ? 'Connect your wallet to claim tokens' : 'Connect your wallet to participate in the token sale'}</p>
                     <button
                       onClick={() => connect()}
                       className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all hover:scale-105 shadow-lg shadow-purple-500/25"
