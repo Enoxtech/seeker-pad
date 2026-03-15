@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getLaunchById, getUserParticipation, createParticipation } from '@/data/launches'
-import { useWallet } from '@/contexts/WalletContextProvider'
+import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import type { Launch, Participation } from '@/types'
 
 interface Props {
@@ -15,7 +15,8 @@ interface Props {
 export default function LaunchDetailPage({ params }: Props) {
   const { id } = use(params)
   const router = useRouter()
-  const { connected, publicKey, connect, sendTransaction } = useWallet()
+  const { connection } = useConnection()
+  const { connected, publicKey, sendTransaction, connect } = useWallet()
   
   const [launch, setLaunch] = useState<Launch | null>(null)
   const [participation, setParticipation] = useState<Participation | null>(null)
@@ -32,7 +33,7 @@ export default function LaunchDetailPage({ params }: Props) {
         setLaunch(launchData || null)
         
         if (publicKey) {
-          const part = await getUserParticipation(publicKey.toBase58(), id)
+          const part = await getUserParticipation(publicKey.toString(), id)
           setParticipation(part)
         }
       } catch (error) {
@@ -119,7 +120,7 @@ export default function LaunchDetailPage({ params }: Props) {
           const vaultPubkey = new PublicKey('7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU') // Demo vault
           const transaction = new Transaction().add(
             SystemProgram.transfer({
-              fromPubkey: publicKey,
+              fromPubkey: new PublicKey(publicKey),
               toPubkey: vaultPubkey,
               lamports: Math.floor(amountSol * 1e9),
             })
@@ -127,7 +128,7 @@ export default function LaunchDetailPage({ params }: Props) {
           
           const { blockhash } = await connection.getLatestBlockhash()
           transaction.recentBlockhash = blockhash
-          transaction.feePayer = publicKey
+          transaction.feePayer = new PublicKey(publicKey)
           
           txSignature = await sendTransaction(transaction, connection)
         } else {
