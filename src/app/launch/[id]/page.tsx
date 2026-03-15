@@ -1,448 +1,330 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import Link from 'next/link'
-import { getLaunchById, getUserParticipation, createParticipation } from '@/data/launches'
+import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
-import type { Launch, Participation } from '@/types'
+import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js'
+import { getUserParticipation, createParticipation } from '@/data/launches'
 
-interface Props {
-  params: Promise<{ id: string }>
-}
+// Dynamic imports for wallet UI components
+const WalletMultiButton = dynamic(
+  () => import('@solana/wallet-adapter-react-ui').then(mod => mod.WalletMultiButton),
+  { ssr: false }
+)
+const WalletDisconnectButton = dynamic(
+  () => import('@solana/wallet-adapter-react-ui').then(mod => mod.WalletDisconnectButton),
+  { ssr: false }
+)
 
-export default function LaunchDetailPage({ params }: Props) {
-  const { id } = use(params)
-  const router = useRouter()
+
+
+export default function LaunchDetail({ params }: { params: { id: string } }) {
+  const { id } = params
   const { connection } = useConnection()
   const { connected, publicKey, sendTransaction, connect } = useWallet()
   
-  const [launch, setLaunch] = useState<Launch | null>(null)
-  const [participation, setParticipation] = useState<Participation | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [participating, setParticipating] = useState(false)
-  const [amount, setAmount] = useState('')
-  const [showModal, setShowModal] = useState(false)
-  const [timeLeft, setTimeLeft] = useState('')
+  const [launch, setLaunch] = useState<any>(null)
+  const [participation, setParticipation] = useState<any>(null)
+  const [amountSol, setAmountSol] = useState('')
+  const [purchasedAmount, setPurchasedAmount] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
+  // Fetch launch data
   useEffect(() => {
-    async function loadData() {
+    async function fetchLaunch() {
       try {
-        const launchData = await getLaunchById(id)
-        setLaunch(launchData || null)
-        
-        if (publicKey) {
-          const part = await getUserParticipation(publicKey.toString(), id)
+        const res = await fetch(`/api/launches/${id}`)
+        const data = await res.json()
+        setLaunch(data)
+      } catch (err) {
+        console.error('Failed to fetch launch:', err)
+      }
+    }
+    fetchLaunch()
+  }, [id])
+
+  // Fetch user participation
+  useEffect(() => {
+    async function fetchParticipation() {
+      if (publicKey) {
+        try {
+          const part = await getUserParticipation(publicKey.toBase58(), id)
           setParticipation(part)
+          if (part) {
+            setPurchasedAmount(Number(part.amount))
+          }
+        } catch (err) {
+          console.error('Failed to fetch participation:', err)
         }
-      } catch (error) {
-        console.error('Failed to load launch:', error)
-      } finally {
-        setLoading(false)
       }
     }
-    loadData()
-  }, [id, publicKey])
+    fetchParticipation()
+  }, [publicKey, id])
 
-  useEffect(() => {
-    if (!launch?.startTime || !launch?.endTime) return
+  const handleBuyTokens = async () => {
+    setError('')
+    setSuccess('')
     
-    const updateTimer = () => {
-      const now = new Date()
-      const start = new Date(launch.startTime!)
-      const end = new Date(launch.endTime!)
-      
-      let target = start
-      let label = 'Starts in'
-      
-      if (now >= end) {
-        setTimeLeft('Ended')
-        return
-      } else if (now >= start) {
-        target = end
-        label = 'Ends in'
-      } else {
-        label = 'Starts in'
-      }
-      
-      const diff = target.getTime() - now.getTime()
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-      
-      let timeStr = ''
-      if (days > 0) timeStr += `${days}d `
-      if (hours > 0 || days > 0) timeStr += `${hours}h `
-      timeStr += `${minutes}m ${seconds}s`
-      
-      setTimeLeft(timeStr)
+    if (!amountSol || isNaN(Number(amountSol))) {
+      setError('Please enter a valid amount')
+      return
     }
     
-    updateTimer()
-    const interval = setInterval(updateTimer, 1000)
-    return () => clearInterval(interval)
-  }, [launch?.startTime, launch?.endTime])
+    const amountSolNum = Number(amountSol)
+    
+    if (launch?.minAllocation && amountSolNum < Number(launch.minAllocation)) {
+      setError(`Minimum allocation is ${launch.minAllocation} SOL`)
+      return
+    }
+    
+    if (launch?.maxAllocation && amountSolNum > Number(launch.maxAllocation)) {
+      setError(`Maximum allocation is ${launch.maxAllocation} SOL`)
+      return
+    }
 
-  const handleParticipate = async () => {
-    if (!connected || !publicKey) {
-      await connect()
+    if (!publicKey || !sendTransaction || !connection) {
+      setError('Please connect your wallet')
       return
     }
-    
-    if (!amount || parseFloat(amount) <= 0) return
-    
-    // Validate allocation
-    const amountSol = parseFloat(amount)
-    if (launch?.minAllocation && amountSol < launch.minAllocation) {
-      alert(`Minimum allocation is ${launch.minAllocation} SOL`)
-      return
-    }
-    if (launch?.maxAllocation && amountSol > launch.maxAllocation) {
-      alert(`Maximum allocation is ${launch.maxAllocation} SOL`)
-      return
-    }
-    
-    setParticipating(true)
+
+    setIsLoading(true)
+
     try {
-      // Get Solana connection
-      const { Connection } = await import('@solana/web3.js')
-      const connection = new Connection('https://api.devnet.solana.com', 'confirmed')
-      
-      // Try to use real transaction first
-      let txSignature: string
-      try {
-        if (sendTransaction && publicKey) {
-          const { Transaction, SystemProgram, PublicKey } = await import('@solana/web3.js')
-          
-          // Create transfer to vault
-          const vaultPubkey = new PublicKey('7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU') // Demo vault
-          const transaction = new Transaction().add(
-            SystemProgram.transfer({
-              fromPubkey: new PublicKey(publicKey),
-              toPubkey: vaultPubkey,
-              lamports: Math.floor(amountSol * 1e9),
-            })
-          )
-          
-          const { blockhash } = await connection.getLatestBlockhash()
-          transaction.recentBlockhash = blockhash
-          transaction.feePayer = new PublicKey(publicKey)
-          
-          txSignature = await sendTransaction(transaction, connection)
-        } else {
-          // Fallback: generate signature based on amount (demo mode)
-          txSignature = `demo_${Date.now()}_${Math.random().toString(36).substring(7)}`
-        }
-      } catch (txError) {
-        console.warn('Real transaction failed, using demo mode:', txError)
-        txSignature = `demo_${Date.now()}_${Math.random().toString(36).substring(7)}`
-      }
-      
-      const part = await createParticipation({
-        launchId: id,
-        userAddress: publicKey.toBase58(),
-        amountSol,
-        txSignature,
-      })
-      setParticipation(part)
-      setShowModal(false)
-      setAmount('')
-    } catch (error) {
-      console.error('Participation failed:', error)
-    } finally {
-      setParticipating(false)
-    }
-  }
+      // For demo: simulate transaction (mock vault)
+      const mockVault = new PublicKey('Gq3q3J7L9m8V6F5qK2p4R8t3Y1n6B7c4D6e9F3g2H1k5')
+      const vaultPubkey = mockVault
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    )
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: new PublicKey(publicKey.toBase58()),
+          toPubkey: vaultPubkey,
+          lamports: Math.floor(amountSolNum * 1e9),
+        })
+      )
+
+      const { blockhash } = await connection.getLatestBlockhash()
+      transaction.recentBlockhash = blockhash
+      transaction.feePayer = new PublicKey(publicKey.toBase58())
+
+      try {
+        const signature = await sendTransaction(transaction, connection)
+        
+        // Save to database
+        const part = await createParticipation({
+          launchId: id,
+          userAddress: publicKey.toBase58(),
+          amountSol: amountSolNum,
+          txSignature: signature,
+        })
+
+        setSuccess(`Transaction sent! Signature: ${signature.slice(0, 8)}...`)
+        setPurchasedAmount((prev) => (prev || 0) + amountSolNum)
+        setAmountSol('')
+      } catch (txError: any) {
+        // If transaction fails, save as pending anyway for demo
+        const part = await createParticipation({
+          launchId: id,
+          userAddress: publicKey.toBase58(),
+          amountSol: amountSolNum,
+          txSignature: 'demo-' + Date.now(),
+        })
+        
+        setSuccess(`Demo mode: Saved ${amountSolNum} SOL participation!`)
+        setPurchasedAmount((prev) => (prev || 0) + amountSolNum)
+        setAmountSol('')
+      }
+    } catch (err: any) {
+      console.error('Transaction error:', err)
+      setError(err.message || 'Transaction failed')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (!launch) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl text-white mb-4">Launch Not Found</h1>
-          <Link href="/launchpad" className="text-cyan-400 hover:underline">
-            Back to Launchpad
-          </Link>
-        </div>
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
       </div>
     )
   }
 
-  const progress = launch.hardCap ? Math.min(((launch.totalRaised || 0) / launch.hardCap) * 100, 100) : 0
-  const isLive = launch.status === 'live'
-  const isEnded = launch.status === 'ended'
+  const progress = launch.raiseTarget 
+    ? Math.min((launch.totalRaised / launch.raiseTarget) * 100, 100) 
+    : 0
+
+  const tokenPrice = Number(launch.launchPrice)
+  const tokenAmount = amountSol ? (Number(amountSol) / tokenPrice).toLocaleString() : '0'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+    <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <header className="border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">S</span>
-              </div>
-              <span className="text-xl font-bold text-white">SeekerPad</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/launchpad" className="text-slate-300 hover:text-white transition-colors">
-                Launches
-              </Link>
-              <Link href="/elite" className="text-slate-300 hover:text-white transition-colors">
-                Elite
-              </Link>
-              <Link href="/portfolio" className="text-slate-300 hover:text-white transition-colors">
-                Portfolio
-              </Link>
-            </div>
+      <header className="border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <a href="/launchpad" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            SeekerPad
+          </a>
+          <div className="flex items-center gap-4">
+            <WalletMultiButton />
+            {connected && <WalletDisconnectButton />}
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
-        <Link 
-          href="/launchpad" 
-          className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Launches
-        </Link>
-
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Hero Card */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-xl flex items-center justify-center">
-                    <span className="text-2xl font-bold text-white">{launch.symbol?.slice(0, 2)}</span>
-                  </div>
-                  <div>
-                    <h1 className="text-3xl font-bold text-white">{launch.name}</h1>
-                    <p className="text-slate-400">${launch.symbol}</p>
-                  </div>
+        {/* Launch Info */}
+        <div className="grid md:grid-cols-2 gap-8 mb-8">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              {launch.logoUrl ? (
+                <img src={launch.logoUrl} alt={launch.name} className="w-20 h-20 rounded-xl" />
+              ) : (
+                <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-3xl font-bold">
+                  {launch.symbol?.[0] || '?'}
                 </div>
-                <div className="flex gap-2">
-                  {launch.type === 'elite' && (
-                    <span className="px-3 py-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full text-purple-400 text-sm font-medium">
-                      Elite
-                    </span>
-                  )}
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    isLive 
-                      ? 'bg-green-500/20 border border-green-500/30 text-green-400'
-                      : isEnded
-                        ? 'bg-slate-500/20 border border-slate-500/30 text-slate-400'
-                        : 'bg-blue-500/20 border border-blue-500/30 text-blue-400'
-                  }`}>
-                    {isLive ? '● Live' : isEnded ? 'Ended' : 'Upcoming'}
-                  </span>
-                </div>
-              </div>
-              
-              <p className="text-slate-300 leading-relaxed">{launch.description}</p>
-              
-              {/* Timer */}
-              <div className="mt-6 p-4 bg-slate-900/50 rounded-xl">
-                <div className="text-center">
-                  <p className="text-slate-400 text-sm mb-1">
-                    {isLive ? 'Sale Ends In' : isEnded ? 'Sale Ended' : 'Sale Starts In'}
-                  </p>
-                  <p className="text-2xl font-mono font-bold text-white">{timeLeft}</p>
-                </div>
+              )}
+              <div>
+                <h1 className="text-3xl font-bold">{launch.name}</h1>
+                <p className="text-gray-400">{launch.symbol}</p>
               </div>
             </div>
+            
+            <p className="text-gray-300">{launch.description}</p>
 
-            {/* Tokenomics */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
-              <h2 className="text-xl font-bold text-white mb-4">Tokenomics</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-slate-900/50 rounded-xl">
-                  <p className="text-slate-400 text-sm">Launch Price</p>
-                  <p className="text-xl font-bold text-white">${launch.launchPrice?.toFixed(4)}</p>
-                </div>
-                <div className="p-4 bg-slate-900/50 rounded-xl">
-                  <p className="text-slate-400 text-sm">Total Supply</p>
-                  <p className="text-xl font-bold text-white">{launch.totalSupply?.toLocaleString() || '1B'}</p>
-                </div>
-                <div className="p-4 bg-slate-900/50 rounded-xl">
-                  <p className="text-slate-400 text-sm">Initial Liquidity</p>
-                  <p className="text-xl font-bold text-white">{launch.initialLiquidityPercent || 80}%</p>
-                </div>
-                <div className="p-4 bg-slate-900/50 rounded-xl">
-                  <p className="text-slate-400 text-sm">Hard Cap</p>
-                  <p className="text-xl font-bold text-white">${(launch.hardCap || 0).toLocaleString()} SOL</p>
-                </div>
-              </div>
-              
-              {/* Vesting Info */}
-              <div className="mt-4 p-4 bg-slate-900/50 rounded-xl">
-                <p className="text-slate-400 text-sm mb-2">Vesting Schedule</p>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="text-white">TGE: {launch.initialUnlockPercent || 20}%</span>
-                  <span className="text-slate-500">→</span>
-                  <span className="text-white">Vesting: {launch.vestingPeriod || 6} months</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Project Links */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
-              <h2 className="text-xl font-bold text-white mb-4">Project Links</h2>
-              <div className="flex flex-wrap gap-3">
-                {launch.websiteUrl && (
-                  <a href={launch.websiteUrl} target="_blank" rel="noopener noreferrer" 
-                     className="px-4 py-2 bg-slate-900/50 hover:bg-slate-900/70 rounded-lg text-slate-300 hover:text-white transition-colors flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                    </svg>
-                    Website
-                  </a>
-                )}
-                {launch.twitterUrl && (
-                  <a href={launch.twitterUrl} target="_blank" rel="noopener noreferrer"
-                     className="px-4 py-2 bg-slate-900/50 hover:bg-slate-900/70 rounded-lg text-slate-300 hover:text-white transition-colors flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                    </svg>
-                    Twitter
-                  </a>
-                )}
-                {launch.telegramUrl && (
-                  <a href={launch.telegramUrl} target="_blank" rel="noopener noreferrer"
-                     className="px-4 py-2 bg-slate-900/50 hover:bg-slate-900/70 rounded-lg text-slate-300 hover:text-white transition-colors flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.28a.83.83 0 01-.402.392l-4.423 2.635a.83.83 0 01-.96-.16l2.47-3.59-2.024-3.046a.83.83 0 01.097-1.15l9.266-3.589a.83.83 0 01.946.243z" />
-                    </svg>
-                    Telegram
-                  </a>
-                )}
-              </div>
+            <div className="flex gap-4">
+              {launch.websiteUrl && (
+                <a href={launch.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300">
+                  🌐 Website
+                </a>
+              )}
+              {launch.twitterUrl && (
+                <a href={launch.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300">
+                  🐦 Twitter
+                </a>
+              )}
+              {launch.telegramUrl && (
+                <a href={launch.telegramUrl} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300">
+                  ✈️ Telegram
+                </a>
+              )}
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Participation Card */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 sticky top-24">
-              <h2 className="text-xl font-bold text-white mb-4">Participation</h2>
+          <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Status</span>
+                <span className={`px-3 py-1 rounded-full text-sm ${
+                  launch.status === 'live' ? 'bg-green-500/20 text-green-400' :
+                  launch.status === 'upcoming' ? 'bg-blue-500/20 text-blue-400' :
+                  'bg-gray-500/20 text-gray-400'
+                }`}>
+                  {launch.status?.charAt(0).toUpperCase() + launch.status?.slice(1)}
+                </span>
+              </div>
               
-              {/* Progress */}
-              <div className="mb-6">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Price</span>
+                <span>${tokenPrice} SOL</span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-gray-400">Total Raised</span>
+                <span className="text-green-400">${Number(launch.totalRaised || 0).toLocaleString()}</span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-gray-400">Target</span>
+                <span>${Number(launch.raiseTarget || 0).toLocaleString()}</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-gray-400">Participants</span>
+                <span>{launch.participantsCount || 0}</span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-4">
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-slate-400">Raised</span>
-                  <span className="text-white font-medium">${(launch.totalRaised || 0).toLocaleString()} / ${(launch.hardCap || 0).toLocaleString()} SOL</span>
+                  <span className="text-gray-400">Progress</span>
+                  <span>{progress.toFixed(1)}%</span>
                 </div>
-                <div className="h-3 bg-slate-900 rounded-full overflow-hidden">
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <p className="text-sm text-slate-400 mt-2">{progress.toFixed(1)}% filled</p>
-              </div>
-
-              {/* Your Participation */}
-              {participation && (
-                <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                  <p className="text-green-400 font-medium text-sm mb-1">✓ You participated</p>
-                  <p className="text-white font-bold">{participation.amount} SOL</p>
-                  <p className="text-slate-400 text-sm">{participation.tokenAmount?.toLocaleString()} {launch.symbol}</p>
-                  {participation.status === 'pending' && (
-                    <p className="text-slate-400 text-sm mt-2">Status: Pending claim</p>
-                  )}
-                  {participation.status === 'claimed' && (
-                    <p className="text-green-400 text-sm mt-2">✓ Tokens claimed</p>
-                  )}
-                </div>
-              )}
-
-              {/* Participate Button */}
-              {!isEnded && (
-                <button
-                  onClick={() => !connected ? connect() : setShowModal(true)}
-                  disabled={participating}
-                  className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {!connected 
-                    ? 'Connect Wallet' 
-                    : participation 
-                      ? 'Already Participated' 
-                      : 'Participate Now'
-                  }
-                </button>
-              )}
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-700/50">
-                <div>
-                  <p className="text-slate-400 text-sm">Participants</p>
-                  <p className="text-white font-bold">{launch.participants?.toLocaleString() || 0}</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Min Allocation</p>
-                  <p className="text-white font-bold">{launch.minAllocation || 0.1} SOL</p>
-                </div>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Purchase Section */}
+        <div className="bg-white/5 rounded-2xl p-6 border border-white/10 max-w-md">
+          <h2 className="text-xl font-bold mb-4">Buy Tokens</h2>
+          
+          {purchasedAmount !== null && (
+            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <p className="text-green-400 text-sm">You have purchased {purchasedAmount} SOL worth of tokens</p>
+            </div>
+          )}
+
+          {connected ? (
+            <>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Amount (SOL)</label>
+                  <input
+                    type="number"
+                    value={amountSol}
+                    onChange={(e) => setAmountSol(e.target.value)}
+                    placeholder="Enter SOL amount"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div className="flex justify-between text-sm text-gray-400">
+                  <span>You will receive:</span>
+                  <span>{tokenAmount} {launch.symbol}</span>
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                )}
+
+                {success && (
+                  <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                    <p className="text-green-400 text-sm">{success}</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleBuyTokens}
+                  disabled={isLoading}
+                  className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all"
+                >
+                  {isLoading ? 'Processing...' : 'Buy Tokens'}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center space-y-4">
+              <p className="text-gray-400">Connect your wallet to participate</p>
+              <button
+                onClick={() => connect()}
+                className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all"
+              >
+                Connect Wallet
+              </button>
+            </div>
+          )}
         </div>
       </main>
-
-      {/* Participation Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold text-white mb-4">Participate in {launch.name}</h3>
-            
-            <div className="mb-4">
-              <label className="text-slate-400 text-sm">Amount (SOL)</label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                className="w-full mt-1 px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-              />
-              <div className="flex justify-between text-sm mt-2">
-                <span className="text-slate-400">You'll receive:</span>
-                <span className="text-white font-medium">
-                  {amount ? (parseFloat(amount) * (1 / (launch.launchPrice || 0.001))).toLocaleString() : 0} {launch.symbol}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-white font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleParticipate}
-                disabled={participating || !amount || parseFloat(amount) <= 0}
-                className="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl font-bold text-white transition-all disabled:opacity-50"
-              >
-                {participating ? 'Processing...' : 'Confirm'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
