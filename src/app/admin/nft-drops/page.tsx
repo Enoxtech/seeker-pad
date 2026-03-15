@@ -29,12 +29,17 @@ function NFTDropsContent() {
   const [demoMode, setDemoMode] = useState(false);
   const [walletConnected, setWalletConnected] = useState(false);
 
-  // Check demo mode on mount
+  // Check demo mode on mount - auto-enable for better UX
   useEffect(() => {
     const demo = localStorage.getItem('nftAdminDemo');
     if (demo === 'true') {
       setDemoMode(true);
       setWalletConnected(true); // Treat demo as connected for UX
+    } else {
+      // Auto-enable demo mode by default for admin panel
+      localStorage.setItem('nftAdminDemo', 'true');
+      setDemoMode(true);
+      setWalletConnected(true);
     }
   }, []);
 
@@ -107,42 +112,7 @@ function NFTDropsContent() {
     setEditingDrop(null);
   };
 
-  // Show connection screen if not connected and not in demo mode
-  if (!walletConnected && !demoMode) {
-    return (
-      <div className="min-h-screen bg-gray-900 text-white p-8">
-        <div className="max-w-md mx-auto text-center">
-          <h1 className="text-2xl font-bold mb-4">NFT Drops Management</h1>
-          <p className="text-gray-400 mb-6">Connect your wallet to manage NFT drops</p>
-          
-          {/* Wallet Connect Button */}
-          <div className="bg-gray-800 rounded-lg p-4 mb-6">
-            <button
-              onClick={() => {
-                // Try to trigger wallet modal
-                const btn = document.querySelector('.wallet-adapter-button') as HTMLButtonElement;
-                if (btn) btn.click();
-                else alert('Please click the wallet button in the header to connect');
-              }}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-lg font-medium"
-            >
-              Connect Wallet
-            </button>
-          </div>
-          
-          <div className="text-gray-500 text-sm mb-4">or</div>
-          
-          {/* Demo Mode */}
-          <button
-            onClick={enableDemoMode}
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium"
-          >
-            Continue in Demo Mode
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Demo mode is now auto-enabled via useEffect above
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
