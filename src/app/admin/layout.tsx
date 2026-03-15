@@ -1,9 +1,15 @@
 "use client";
 
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import MobileAdminNav from '@/components/ui/MobileAdminNav';
+
+const WalletAdapterProvider = dynamic(
+  () => import('@/components/wallet/WalletAdapterProvider').then(mod => mod.default),
+  { ssr: false }
+);
 
 const menuItems = [
   { name: 'Dashboard', href: '/admin', icon: (
@@ -64,6 +70,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
+    <WalletAdapterProvider>
     <div className="min-h-screen bg-slate-900">
       {/* Collapsible Sidebar - Desktop Only */}
       <div 
@@ -118,5 +125,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Mobile Bottom Navigation */}
       <MobileAdminNav />
     </div>
+    </WalletAdapterProvider>
   );
 }

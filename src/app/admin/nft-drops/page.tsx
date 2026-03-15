@@ -23,7 +23,8 @@ interface NFTDrop {
   min_skr_amount: number;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+// Use relative API paths - works on both local and Vercel
+const API_BASE = '';
 
 export default function NFTDropsAdmin() {
   const { publicKey } = useWallet();
@@ -56,7 +57,7 @@ export default function NFTDropsAdmin() {
 
   const fetchDrops = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/nft-drops/admin/drops`);
+      const res = await fetch(`${API_BASE}/api/nft-drops/admin/drops`);
       const data = await res.json();
       setDrops(data);
     } catch (error) {
@@ -71,8 +72,8 @@ export default function NFTDropsAdmin() {
     
     try {
       const url = editingDrop 
-        ? `${API_URL}/api/nft-drops/admin/drops/${editingDrop.id}`
-        : `${API_URL}/api/nft-drops/admin/drops`;
+        ? `${API_BASE}/api/nft-drops/admin/drops/${editingDrop.id}`
+        : `${API_BASE}/api/nft-drops/admin/drops`;
       
       const method = editingDrop ? 'PUT' : 'POST';
 
@@ -99,7 +100,7 @@ export default function NFTDropsAdmin() {
       const savedDrop = await dropRes.json();
 
       // Then update eligibility criteria
-      await fetch(`${API_URL}/api/nft-drops/admin/drops/${savedDrop.id}/eligibility`, {
+      await fetch(`${API_BASE}/api/nft-drops/admin/drops/${savedDrop.id}/eligibility`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -145,7 +146,7 @@ export default function NFTDropsAdmin() {
     if (!confirm('Are you sure you want to delete this NFT drop?')) return;
 
     try {
-      await fetch(`${API_URL}/api/nft-drops/admin/drops/${id}`, {
+      await fetch(`${API_BASE}/api/nft-drops/admin/drops/${id}`, {
         method: 'DELETE'
       });
       fetchDrops();
